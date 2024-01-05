@@ -103,6 +103,9 @@ class VersionEnum(str, Enum):
 	v4_hw = 'v4_hw'
 	v4_14u = 'v4.14u'
 	v4_14u_robust = 'v4.14u_robust'
+	v4_15a_robust = 'v4.15a_robust'
+	v4_16a_robust = 'v4.16a_robust'
+	v4_17a_robust = 'v4.17a_robust'
 	v5 = 'v5'
 	v5_robust = 'v5_robust'
 	v5_bilingual = 'v5_bilingual'
@@ -130,6 +133,7 @@ class VersionEnum(str, Enum):
 	lipikar = 'lipikar'
 
 	tesseract = 'tesseract'
+	tesseract_bi = 'tesseract_bi'
 
 
 class OCRRequest(BaseModel):

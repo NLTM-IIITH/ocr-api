@@ -1,5 +1,8 @@
 import os
+import shutil
+import time
 from dataclasses import dataclass
+import uuid
 from datetime import datetime
 from os.path import join
 from subprocess import call
@@ -7,7 +10,7 @@ from tempfile import TemporaryDirectory
 from typing import List
 
 from dateutil.tz import gettz
-from fastapi import Depends, FastAPI, Form, Request, UploadFile
+from fastapi import Depends, FastAPI, Form, Request, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 
 from .dependencies import save_uploaded_images
@@ -15,6 +18,7 @@ from .helper import *
 from .models import OCRImageResponse, OCRRequest, PostprocessRequest
 from .modules.cegis.routes import router as cegis_router
 from .modules.ulca.routes import router as ulca_router
+from server.config import IMAGE_FOLDER
 
 app = FastAPI(
 	title='OCR API',
@@ -47,10 +51,79 @@ def test_server_online():
 	return 'pong'
 
 
-@dataclass
-class CustomDir:
-	name: str
+# @dataclass
+# class CustomDir:
+# 	name: 
 
+
+def save_uploaded_image(image: UploadFile) -> str:
+	"""
+	function to save the uploaded image to the disk
+
+	@returns the absolute location of the saved image
+	"""
+	t = time.time()
+	print('removing all the previous uploaded files from the image folder')
+	os.system(f'rm -rf {IMAGE_FOLDER}/*')
+	location = join(IMAGE_FOLDER, '{}.{}'.format(
+		str(uuid.uuid4()),
+		image.filename.strip().split('.')[-1]
+	))
+	with open(location, 'wb+') as f:
+		shutil.copyfileobj(image.file, f)
+	return location
+
+
+@app.post(
+	'/ocr/tesseract',
+	tags=['OCR'],
+)
+def infer_ocr(
+	image: UploadFile = File(...),
+	language: str = Form('english'),
+	bilingual: bool = Form(False),
+):
+	tmp = TemporaryDirectory(prefix='hh')
+	location = join(tmp.name, '{}.{}'.format(
+		str(uuid.uuid4()),
+		image.filename.strip().split('.')[-1]
+	))
+	with open(location, 'wb+') as f:
+		shutil.copyfileobj(image.file, f)
+	return call_page_tesseract2(language, tmp.name, bilingual)
+	# tmp = TemporaryDirectory(prefix='ocr_images')
+	# # tmp = CustomDir(name='/home/ocr/test')
+	# process_images(ocr_request.imageContent, tmp.name)
+
+	# _, language = process_language(ocr_request.language)
+	# version = process_version(ocr_request.version)
+	# modality = process_modality(ocr_request.modality)
+	# print('before verification', language, version, modality)
+	# verify_model(language, version, modality)
+	# if 'bilingual' in version:
+	# 	language = f'english_{language}'
+	# print(language, version, modality)
+	# if version == 'v0':
+	# 	load_model(modality, language, version)
+	# 	call(f'./infer_v0.sh {modality} {language}', shell=True)
+	# elif version == 'v1_iitb':
+	# 	call(f'./infer_v1_iitb.sh {modality} {language} {tmp.name}', shell=True)
+	# elif version == 'tesseract':
+	# 	folder = tmp.name
+	# 	# call_tesseract(language, folder)
+	# 	return call_page_tesseract(language, folder)
+	# else:
+	# 	if ocr_request.meta.get('include_probability', False):
+	# 		call(
+	# 			f'./infer_prob.sh {modality} {language} {tmp.name} {version}',
+	# 			shell=True
+	# 		)
+	# 	else:
+	# 		call(
+	# 			f'./infer.sh {modality} {language} {tmp.name} {version}',
+	# 			shell=True
+	# 		)
+	# return process_ocr_output(tmp.name)
 
 @app.post(
 	'/ocr/infer',
@@ -77,7 +150,11 @@ def infer_ocr(ocr_request: OCRRequest) -> List[OCRImageResponse]:
 	elif version == 'v1_iitb':
 		call(f'./infer_v1_iitb.sh {modality} {language} {tmp.name}', shell=True)
 	elif version == 'tesseract':
-		call_tesseract(language, tmp.name)
+		folder = tmp.name
+		return call_page_tesseract(language, folder)
+	elif version == 'tesseract_bi':
+		folder = tmp.name
+		return call_page_tesseract_bi(language, folder)
 	else:
 		if ocr_request.meta.get('include_probability', False):
 			call(
@@ -125,7 +202,8 @@ def infer_ocr(
 	elif version == 'v1_iitb':
 		call(f'./infer_v1_iitb.sh {modality} {language} {folder}', shell=True)
 	elif version == 'tesseract':
-		call_tesseract(language, folder)
+		# call_tesseract(language, folder)
+		return call_page_tesseract(language, folder)
 	else:
 		call(
 			f'./infer.sh {modality} {language} {folder} {version}',

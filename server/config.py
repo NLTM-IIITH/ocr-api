@@ -44,7 +44,7 @@ TESS_LANG = {
 	'bengali': 'ben',
 	'malayalam': 'mal',
 	'assamese': 'asm',
-	'manipuri': 'mni',
+	'manipuri': 'ben',
 	'oriya': 'ori',
 	'urdu': 'urd',
 }
