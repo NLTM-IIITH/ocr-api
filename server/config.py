@@ -47,4 +47,7 @@ TESS_LANG = {
 	'manipuri': 'ben',
 	'oriya': 'ori',
 	'urdu': 'urd',
+    'nepali': 'nep',
+    'sanskrit': 'san',
+    'sindhi': 'snd'
 }
