@@ -91,39 +91,6 @@ def infer_ocr(
 	with open(location, 'wb+') as f:
 		shutil.copyfileobj(image.file, f)
 	return call_page_tesseract2(language, tmp.name, bilingual)
-	# tmp = TemporaryDirectory(prefix='ocr_images')
-	# # tmp = CustomDir(name='/home/ocr/test')
-	# process_images(ocr_request.imageContent, tmp.name)
-
-	# _, language = process_language(ocr_request.language)
-	# version = process_version(ocr_request.version)
-	# modality = process_modality(ocr_request.modality)
-	# print('before verification', language, version, modality)
-	# verify_model(language, version, modality)
-	# if 'bilingual' in version:
-	# 	language = f'english_{language}'
-	# print(language, version, modality)
-	# if version == 'v0':
-	# 	load_model(modality, language, version)
-	# 	call(f'./infer_v0.sh {modality} {language}', shell=True)
-	# elif version == 'v1_iitb':
-	# 	call(f'./infer_v1_iitb.sh {modality} {language} {tmp.name}', shell=True)
-	# elif version == 'tesseract':
-	# 	folder = tmp.name
-	# 	# call_tesseract(language, folder)
-	# 	return call_page_tesseract(language, folder)
-	# else:
-	# 	if ocr_request.meta.get('include_probability', False):
-	# 		call(
-	# 			f'./infer_prob.sh {modality} {language} {tmp.name} {version}',
-	# 			shell=True
-	# 		)
-	# 	else:
-	# 		call(
-	# 			f'./infer.sh {modality} {language} {tmp.name} {version}',
-	# 			shell=True
-	# 		)
-	# return process_ocr_output(tmp.name)
 
 @app.post(
 	'/ocr/infer',
