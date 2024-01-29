@@ -51,3 +51,6 @@ TESS_LANG = {
     'sanskrit': 'san',
     'sindhi': 'snd'
 }
+
+MONGO_ENDPOINT = 'mongodb://admin:admin@127.0.0.1:27017/ocr'
+MONGO_DATABASE = 'ocr'

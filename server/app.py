@@ -21,6 +21,8 @@ from .modules.ulca.routes import router as ulca_router
 from .modules.external.routes import router as external_router
 from server.config import IMAGE_FOLDER
 
+from .database import close_mongo_connection, connect_to_mongo
+
 app = FastAPI(
 	title='OCR API',
 	docs_url='/ocr/docs',
@@ -34,6 +36,9 @@ app.add_middleware(
 	allow_headers=['*'],
 	allow_credentials=True,
 )
+
+app.add_event_handler('startup', connect_to_mongo)
+app.add_event_handler('shutdown', close_mongo_connection)
 
 app.include_router(cegis_router)
 app.include_router(ulca_router)
