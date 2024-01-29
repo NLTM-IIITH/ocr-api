@@ -30,3 +30,13 @@ def infer_ocr(
 	with open(location, 'wb+') as f:
 		shutil.copyfileobj(image.file, f)
 	return call_page_tesseract2(language, tmp.name, bilingual)
+
+
+@router.post(
+	'/google/token',
+)
+def infer_ocr(
+	email: str = Form(''),
+	purpose: str = Form(''),
+):
+	pass
