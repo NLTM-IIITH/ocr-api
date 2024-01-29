@@ -18,6 +18,7 @@ from .helper import *
 from .models import OCRImageResponse, OCRRequest, PostprocessRequest
 from .modules.cegis.routes import router as cegis_router
 from .modules.ulca.routes import router as ulca_router
+from .modules.external.routes import router as external_router
 from server.config import IMAGE_FOLDER
 
 app = FastAPI(
@@ -36,6 +37,7 @@ app.add_middleware(
 
 app.include_router(cegis_router)
 app.include_router(ulca_router)
+app.include_router(external_router)
 
 
 
@@ -74,23 +76,23 @@ def save_uploaded_image(image: UploadFile) -> str:
 	return location
 
 
-@app.post(
-	'/ocr/tesseract',
-	tags=['OCR'],
-)
-def infer_ocr(
-	image: UploadFile = File(...),
-	language: str = Form('english'),
-	bilingual: bool = Form(False),
-):
-	tmp = TemporaryDirectory(prefix='hh')
-	location = join(tmp.name, '{}.{}'.format(
-		str(uuid.uuid4()),
-		image.filename.strip().split('.')[-1]
-	))
-	with open(location, 'wb+') as f:
-		shutil.copyfileobj(image.file, f)
-	return call_page_tesseract2(language, tmp.name, bilingual)
+# @app.post(
+# 	'/ocr/tesseract',
+# 	tags=['OCR'],
+# )
+# def infer_ocr(
+# 	image: UploadFile = File(...),
+# 	language: str = Form('english'),
+# 	bilingual: bool = Form(False),
+# ):
+# 	tmp = TemporaryDirectory(prefix='hh')
+# 	location = join(tmp.name, '{}.{}'.format(
+# 		str(uuid.uuid4()),
+# 		image.filename.strip().split('.')[-1]
+# 	))
+# 	with open(location, 'wb+') as f:
+# 		shutil.copyfileobj(image.file, f)
+# 	return call_page_tesseract2(language, tmp.name, bilingual)
 
 @app.post(
 	'/ocr/infer',
