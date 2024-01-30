@@ -130,6 +130,7 @@ class VersionEnum(str, Enum):
 	lipikar = 'lipikar'
 
 	tesseract = 'tesseract'
+    v1_st_iitj = 'v1_st_iitj'
 
 
 class OCRRequest(BaseModel):

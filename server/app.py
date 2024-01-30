@@ -78,7 +78,9 @@ def infer_ocr(ocr_request: OCRRequest) -> List[OCRImageResponse]:
 		call(f'./infer_v1_iitb.sh {modality} {language} {tmp.name}', shell=True)
 	elif version == 'tesseract':
 		call_tesseract(language, tmp.name)
-	else:
+    elif version == 'v1_st_iitj':
+        call(f'./infer_v1_iitj.sh {modality} {langauge} {tmp.name}')
+    else:
 		if ocr_request.meta.get('include_probability', False):
 			call(
 				f'./infer_prob.sh {modality} {language} {tmp.name} {version}',
