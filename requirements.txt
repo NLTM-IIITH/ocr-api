@@ -4,3 +4,4 @@ pytz
 requests
 Pillow
 python-multipart
+google-cloud-vision

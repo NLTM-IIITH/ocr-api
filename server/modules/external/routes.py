@@ -6,7 +6,7 @@ from os.path import join
 
 import uuid
 import shutil
-from .helper import call_page_tesseract2
+from .helper import call_page_tesseract2, call_google_ocr
 
 router = APIRouter(
 	prefix='/ocr',
@@ -35,8 +35,25 @@ def infer_ocr(
 @router.post(
 	'/google/token',
 )
-def infer_ocr(
+def fetch_google_token(
 	email: str = Form(''),
 	purpose: str = Form(''),
 ):
 	pass
+
+
+@router.post(
+	'/google'
+)
+def infer_google_ocr(
+	image: UploadFile = File(...),
+	language: str = Form('en'),
+):
+	tmp = TemporaryDirectory()
+	location = join(tmp.name, '{}.{}'.format(
+		str(uuid.uuid4()),
+		image.filename.strip().split('.')[-1]
+	))
+	with open(location, 'wb+') as f:
+		shutil.copyfileobj(image.file, f)
+	return call_google_ocr(language, tmp.name)
