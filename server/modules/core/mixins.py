@@ -15,8 +15,11 @@ class DBModelMixin:
 
 	@classmethod
 	async def get(cls, id):
-		ret = await get_db()[cls.Meta.collection_name].find_one({'id': id})
-		return cls(**ret)
+		try:
+			ret = await get_db()[cls.Meta.collection_name].find_one({'id': id})
+			return cls(**ret)
+		except:
+			return None
 
 	@classmethod
 	async def filter(cls, **kwargs) -> List:
