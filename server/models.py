@@ -131,6 +131,7 @@ class VersionEnum(str, Enum):
 	v5_1_2u_robustbilingual = 'v5.1.2u_robustbilingual'
 
 	lipikar = 'lipikar'
+	v1_pu = 'v1_pu'
 
 	tesseract = 'tesseract'
 	tesseract_bi = 'tesseract_bi'

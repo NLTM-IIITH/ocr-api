@@ -229,6 +229,22 @@ def add_padding(images, size: int):
 		out.paste(img, (size, size))
 		out.save(image)
 
+def call_page_pu(language, folder):
+	a = [join(folder, i) for i in os.listdir(folder)]
+	b = os.getcwd()
+	code_path = '/home/ocr/models/code/v1_pu/{}'.format(language)
+	os.system('cd {} && /home/ocr/temp_venv/bin/python {}/main.py {} && cd {}'.format(
+		code_path,
+		code_path,
+		a[0],
+		b
+	))
+	with open('{}/output.txt'.format(code_path), 'r', encoding='utf-8') as f:
+		ret = f.read().strip()
+	return [
+		OCRImageResponse(text=ret, meta={})
+	]
+
 def call_page_tesseract(language, folder):
 	a = [join(folder, i) for i in os.listdir(folder)]
 	ret = pytesseract.image_to_data(a[0], lang=TESS_LANG[language]).strip().split('\n')
