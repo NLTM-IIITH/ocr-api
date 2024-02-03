@@ -19,6 +19,7 @@ from .models import OCRImageResponse, OCRRequest, PostprocessRequest
 from .modules.cegis.routes import router as cegis_router
 from .modules.ulca.routes import router as ulca_router
 from .modules.external.routes import router as external_router
+from .modules.iitb_v2.routes import router as iitb_v2_router
 from server.config import IMAGE_FOLDER
 
 from .database import close_mongo_connection, connect_to_mongo
@@ -43,6 +44,7 @@ app.add_event_handler('shutdown', close_mongo_connection)
 app.include_router(cegis_router)
 app.include_router(ulca_router)
 app.include_router(external_router)
+app.include_router(iitb_v2_router)
 
 
 
