@@ -112,7 +112,7 @@ def infer_ocr(ocr_request: OCRRequest) -> List[OCRImageResponse]:
 	# tmp = CustomDir(name='/home/ocr/test')
 	process_images(ocr_request.imageContent, tmp.name)
 
-	_, language = process_language(ocr_request.language)
+	lcode, language = process_language(ocr_request.language)
 	version = process_version(ocr_request.version)
 	modality = process_modality(ocr_request.modality)
 	print('before verification', language, version, modality)
@@ -125,6 +125,8 @@ def infer_ocr(ocr_request: OCRRequest) -> List[OCRImageResponse]:
 		call(f'./infer_v0.sh {modality} {language}', shell=True)
 	elif version == 'v1_iitb':
 		call(f'./infer_v1_iitb.sh {modality} {language} {tmp.name}', shell=True)
+	elif version == 'v2_iitb':
+		call(f'./infer_v1_iitb.sh {modality} {lcode} {tmp.name}', shell=True)
 	elif version == 'v1_pu':
 		return call_page_pu(language, tmp.name)
 	elif version == 'tesseract':

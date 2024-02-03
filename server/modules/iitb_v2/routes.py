@@ -25,12 +25,12 @@ async def infer_ocr(ocr_request: OCRRequest, request: Request) -> OCRResponse:
 	# 	download_models_from_file(models_txt_path,MODEL_FOLDER)
 
 	if modality=='handwritten':
-		call(f'./infer_iitb_v2.sh {modality} {lcode} {IMAGE_FOLDER} {DOCKER_NAME}', shell=True)
+		call(f'./infer_iitb_v2.sh {modality} {lcode} {IMAGE_FOLDER}', shell=True)
 		ret = process_ocr_output(lcode, modality, IMAGE_FOLDER)
 		await save_logs(request, ret)
 		return ret
 	if modality=='printed':
-		call(f'./infer_iitb_v2.sh {modality} {lcode} {IMAGE_FOLDER} {DOCKER_NAME}', shell=True)
+		call(f'./infer_iitb_v2.sh {modality} {lcode} {IMAGE_FOLDER}', shell=True)
 		ret = process_ocr_output(lcode, modality, IMAGE_FOLDER)
 		await save_logs(request, ret)
 		return ret

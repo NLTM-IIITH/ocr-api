@@ -1,7 +1,6 @@
 MODALITY="$1"
 LANGUAGE="$2"
 DATA_DIR="$3"
-DOCKER_NAME="$4"
 
 echo "Performing Inference for $LANGUAGE $MODALITY Task"
 
@@ -27,5 +26,5 @@ docker run --rm --gpus all --net host \
     -v $MODEL_DIR:/root/.cache/doctr/models \
 	-v $MODEL_DIR:/models \
 	-v $DATA_DIR:/data \
-	$DOCKER_NAME \
+	ocr:v2_iitb \
 	python infer.py -l $LANGUAGE -t $MODALITY
