@@ -62,7 +62,7 @@ def test_server_online():
 
 # @dataclass
 # class CustomDir:
-# 	name: 
+# 	name: str
 
 
 def save_uploaded_image(image: UploadFile) -> str:
@@ -126,7 +126,7 @@ def infer_ocr(ocr_request: OCRRequest) -> List[OCRImageResponse]:
 	elif version == 'v1_iitb':
 		call(f'./infer_v1_iitb.sh {modality} {language} {tmp.name}', shell=True)
 	elif version == 'v2_iitb':
-		call(f'./infer_v1_iitb.sh {modality} {lcode} {tmp.name}', shell=True)
+		call(f'./infer_v2_iitb.sh {modality} {lcode} {tmp.name}', shell=True)
 	elif version == 'v1_pu':
 		return call_page_pu(language, tmp.name)
 	elif version == 'tesseract':
