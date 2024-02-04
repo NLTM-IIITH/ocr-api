@@ -130,7 +130,7 @@ def infer_ocr(ocr_request: OCRRequest) -> List[OCRImageResponse]:
 	elif version == 'v1_pu':
 		return call_page_pu(language, tmp.name)
 	elif version == 'v1_st_iitj':
-		call(f'./infer_v1_iitj.sh {modality} {langauge} {tmp.name}')
+		call(f'./infer_v1_iitj.sh {modality} {language} {tmp.name}')
 	elif version == 'tesseract':
 		folder = tmp.name
 		call_tesseract(language, tmp.name)
