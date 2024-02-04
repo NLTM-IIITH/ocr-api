@@ -135,6 +135,7 @@ class VersionEnum(str, Enum):
 	v2_iitb = 'v2_iitb'
 
 	tesseract = 'tesseract'
+  v1_st_iitj = 'v1_st_iitj'
 	tesseract_bi = 'tesseract_bi'
 
 
