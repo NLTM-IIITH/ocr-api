@@ -1,5 +1,8 @@
 import os
+import shutil
+import time
 from dataclasses import dataclass
+import uuid
 from datetime import datetime
 from os.path import join
 from subprocess import call
@@ -7,7 +10,7 @@ from tempfile import TemporaryDirectory
 from typing import List
 
 from dateutil.tz import gettz
-from fastapi import Depends, FastAPI, Form, Request, UploadFile
+from fastapi import Depends, FastAPI, Form, Request, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 
 from .dependencies import save_uploaded_images
@@ -15,6 +18,11 @@ from .helper import *
 from .models import OCRImageResponse, OCRRequest, PostprocessRequest
 from .modules.cegis.routes import router as cegis_router
 from .modules.ulca.routes import router as ulca_router
+from .modules.external.routes import router as external_router
+from .modules.iitb_v2.routes import router as iitb_v2_router
+from server.config import IMAGE_FOLDER
+
+from .database import close_mongo_connection, connect_to_mongo
 
 app = FastAPI(
 	title='OCR API',
@@ -30,8 +38,13 @@ app.add_middleware(
 	allow_credentials=True,
 )
 
+app.add_event_handler('startup', connect_to_mongo)
+app.add_event_handler('shutdown', close_mongo_connection)
+
 app.include_router(cegis_router)
 app.include_router(ulca_router)
+app.include_router(external_router)
+app.include_router(iitb_v2_router)
 
 
 
@@ -47,10 +60,46 @@ def test_server_online():
 	return 'pong'
 
 
-@dataclass
-class CustomDir:
-	name: str
+# @dataclass
+# class CustomDir:
+# 	name: str
 
+
+def save_uploaded_image(image: UploadFile) -> str:
+	"""
+	function to save the uploaded image to the disk
+
+	@returns the absolute location of the saved image
+	"""
+	t = time.time()
+	print('removing all the previous uploaded files from the image folder')
+	os.system(f'rm -rf {IMAGE_FOLDER}/*')
+	location = join(IMAGE_FOLDER, '{}.{}'.format(
+		str(uuid.uuid4()),
+		image.filename.strip().split('.')[-1]
+	))
+	with open(location, 'wb+') as f:
+		shutil.copyfileobj(image.file, f)
+	return location
+
+
+# @app.post(
+# 	'/ocr/tesseract',
+# 	tags=['OCR'],
+# )
+# def infer_ocr(
+# 	image: UploadFile = File(...),
+# 	language: str = Form('english'),
+# 	bilingual: bool = Form(False),
+# ):
+# 	tmp = TemporaryDirectory(prefix='hh')
+# 	location = join(tmp.name, '{}.{}'.format(
+# 		str(uuid.uuid4()),
+# 		image.filename.strip().split('.')[-1]
+# 	))
+# 	with open(location, 'wb+') as f:
+# 		shutil.copyfileobj(image.file, f)
+# 	return call_page_tesseract2(language, tmp.name, bilingual)
 
 @app.post(
 	'/ocr/infer',
@@ -63,7 +112,7 @@ def infer_ocr(ocr_request: OCRRequest) -> List[OCRImageResponse]:
 	# tmp = CustomDir(name='/home/ocr/test')
 	process_images(ocr_request.imageContent, tmp.name)
 
-	_, language = process_language(ocr_request.language)
+	lcode, language = process_language(ocr_request.language)
 	version = process_version(ocr_request.version)
 	modality = process_modality(ocr_request.modality)
 	print('before verification', language, version, modality)
@@ -76,11 +125,19 @@ def infer_ocr(ocr_request: OCRRequest) -> List[OCRImageResponse]:
 		call(f'./infer_v0.sh {modality} {language}', shell=True)
 	elif version == 'v1_iitb':
 		call(f'./infer_v1_iitb.sh {modality} {language} {tmp.name}', shell=True)
+	elif version == 'v2_iitb':
+		call(f'./infer_v2_iitb.sh {modality} {lcode} {tmp.name}', shell=True)
+	elif version == 'v1_pu':
+		return call_page_pu(language, tmp.name)
+  elif version == 'v1_st_iitj':
+    call(f'./infer_v1_iitj.sh {modality} {langauge} {tmp.name}')
 	elif version == 'tesseract':
+    folder = tmp.name
 		call_tesseract(language, tmp.name)
-    elif version == 'v1_st_iitj':
-        call(f'./infer_v1_iitj.sh {modality} {langauge} {tmp.name}')
-    else:
+	elif version == 'tesseract_bi':
+		folder = tmp.name
+		return call_page_tesseract_bi(language, folder)
+	else:
 		if ocr_request.meta.get('include_probability', False):
 			call(
 				f'./infer_prob.sh {modality} {language} {tmp.name} {version}',
@@ -127,7 +184,8 @@ def infer_ocr(
 	elif version == 'v1_iitb':
 		call(f'./infer_v1_iitb.sh {modality} {language} {folder}', shell=True)
 	elif version == 'tesseract':
-		call_tesseract(language, folder)
+		# call_tesseract(language, folder)
+		return call_page_tesseract(language, folder)
 	else:
 		call(
 			f'./infer.sh {modality} {language} {folder} {version}',

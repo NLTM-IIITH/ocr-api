@@ -1,0 +1,15 @@
+https://github.com/iitb-research-code/indic-doctr/releases/download/Indic_Models/crnn_vgg16_bn_handwritten_bengali.pt
+https://github.com/iitb-research-code/indic-doctr/releases/download/Indic_Models/crnn_vgg16_bn_handwritten_gujarati.pt
+https://github.com/iitb-research-code/indic-doctr/releases/download/Indic_Models/crnn_vgg16_bn_handwritten_gurumukhi.pt
+https://github.com/iitb-research-code/indic-doctr/releases/download/Indic_Models/crnn_vgg16_bn_handwritten_hindi.pt
+https://github.com/iitb-research-code/indic-doctr/releases/download/Indic_Models/crnn_vgg16_bn_handwritten_kannada.pt
+https://github.com/iitb-research-code/indic-doctr/releases/download/Indic_Models/crnn_vgg16_bn_handwritten_odia.pt
+https://github.com/iitb-research-code/indic-doctr/releases/download/Indic_Models/crnn_vgg16_bn_handwritten_tamil.pt
+https://github.com/iitb-research-code/indic-doctr/releases/download/Indic_Models/crnn_vgg16_bn_handwritten_telugu.pt
+https://github.com/iitb-research-code/indic-doctr/releases/download/Indic_Models/crnn_vgg16_bn_handwritten_urdu.pt
+https://github.com/iitb-research-code/indic-doctr/releases/download/printed_models/crnn_vgg16_bn_printed-hindi.pt
+https://github.com/iitb-research-code/indic-doctr/releases/download/printed_models/crnn_vgg16_bn_printed-kannada.pt
+https://github.com/iitb-research-code/indic-doctr/releases/download/printed_models/crnn_vgg16_bn_printed-marathi.pt
+https://github.com/iitb-research-code/indic-doctr/releases/download/printed_models/crnn_vgg16_bn_printed-sanskrit.pt
+https://github.com/iitb-research-code/indic-doctr/releases/download/printed_models/crnn_vgg16_bn_printed-tamil.pt
+https://github.com/iitb-research-code/indic-doctr/releases/download/printed_models/crnn_vgg16_bn_printed-telugu.pt

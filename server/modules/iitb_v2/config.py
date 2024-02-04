@@ -1,8 +1,12 @@
+MODEL_FOLDER='/home/ocr/models/pretrained/v2_iitb'
+IMAGE_FOLDER='/home/ocr/website/images'
+LOGS_FOLDER='/home/ocr/logs'
+DOCKER_NAME="iitb-ocr"
+models_txt_path="ocr-api/server/modules/iitb_v2/iitb_ocr_models.txt"
+
 
 PORT = 8058
 NUMBER_LOADED_MODEL_THRESHOLD = 2
-
-IMAGE_FOLDER = '/home/ocr/website/images'
 
 LANGUAGES = {
 	'en': 'english',
@@ -44,13 +48,7 @@ TESS_LANG = {
 	'bengali': 'ben',
 	'malayalam': 'mal',
 	'assamese': 'asm',
-	'manipuri': 'ben',
+	'manipuri': 'mni',
 	'oriya': 'ori',
 	'urdu': 'urd',
-    'nepali': 'nep',
-    'sanskrit': 'san',
-    'sindhi': 'snd'
 }
-
-MONGO_ENDPOINT = 'mongodb://admin:admin@127.0.0.1:27017/ocr'
-MONGO_DATABASE = 'ocr'
