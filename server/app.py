@@ -129,9 +129,11 @@ def infer_ocr(ocr_request: OCRRequest) -> List[OCRImageResponse]:
 		call(f'./infer_v2_iitb.sh {modality} {lcode} {tmp.name}', shell=True)
 	elif version == 'v1_pu':
 		return call_page_pu(language, tmp.name)
+	elif version == 'v1_st_iitj':
+		call(f'./infer_v1_iitj.sh {modality} {langauge} {tmp.name}')
 	elif version == 'tesseract':
 		folder = tmp.name
-		return call_page_tesseract(language, folder)
+		call_tesseract(language, tmp.name)
 	elif version == 'tesseract_bi':
 		folder = tmp.name
 		return call_page_tesseract_bi(language, folder)
