@@ -16,3 +16,25 @@ class Token(BaseModel, DBModelMixin):
 
     class Meta:
         collection_name = 'tokens'
+
+    @classmethod
+    async def create(cls, token_input):
+        ret = cls(**token_input)
+        await ret.save()
+        return await ret.refresh()
+
+
+class Log(BaseModel, DBModelMixin):
+    id: Optional[str] = Field(default_factory=lambda: str(uuid4()))
+    user_token: str
+    created: Optional[datetime] = Field(default_factory=datetime.now)
+
+    class Meta:
+        collection_name = 'logs'
+
+    @classmethod
+    async def create(cls, token: Token):
+        print('creating log for {}'.format(token.id))
+        ret = cls(user_token=token.id)
+        await ret.save()
+        return await ret.refresh()
