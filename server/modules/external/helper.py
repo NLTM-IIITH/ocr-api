@@ -63,12 +63,14 @@ def parse_google_response(response):
 					print(t)
 					words.append({
 						'text': t.strip(),
+						'confidence': round(float(word.confidence), 2),
+						'language_code': str(word.property.detected_languages[0].language_code),
 						'bounding_box': {
 							'x': word.bounding_box.vertices[0].x,
 							'y': word.bounding_box.vertices[0].y,
 							'w': word.bounding_box.vertices[2].x - word.bounding_box.vertices[0].x,
 							'h': word.bounding_box.vertices[2].y - word.bounding_box.vertices[0].y,
-						}
+						},
 					})
 	ret['meta'] = {'words': words}
 	return ret
