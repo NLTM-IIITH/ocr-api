@@ -68,7 +68,7 @@ async def fetch_google_token(
 )
 async def infer_google_ocr(
 	image: UploadFile = File(...),
-	language: str = Form('en'),
+	language: str = Form(''),
 	token: Token = Depends(get_token)
 ):
 	tmp = TemporaryDirectory()

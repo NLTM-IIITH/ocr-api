@@ -61,17 +61,23 @@ def parse_google_response(response):
 					for symbol in word.symbols:
 						t += str(symbol.text)
 					print(t)
-					words.append({
+					x = {
 						'text': t.strip(),
-						'confidence': round(float(word.confidence), 2),
-						'language_code': str(word.property.detected_languages[0].language_code),
 						'bounding_box': {
 							'x': word.bounding_box.vertices[0].x,
 							'y': word.bounding_box.vertices[0].y,
 							'w': word.bounding_box.vertices[2].x - word.bounding_box.vertices[0].x,
 							'h': word.bounding_box.vertices[2].y - word.bounding_box.vertices[0].y,
 						},
-					})
+					}
+					try:
+						x.update({
+							'confidence': round(float(word.confidence), 2),
+							'language_code': str(word.property.detected_languages[0].language_code),
+						})
+					except:
+						pass
+					words.append(x)
 	ret['meta'] = {'words': words}
 	return ret
 
@@ -111,7 +117,7 @@ def call_google_ocr(language, folder):
 			image=img,
 			image_context={
 				'language_hints': [language]
-			}
+			} if language else {}
 		)
 		ret.append(parse_google_response(response))
 	return ret
