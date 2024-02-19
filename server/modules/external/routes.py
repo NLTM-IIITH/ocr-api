@@ -7,7 +7,8 @@ from os.path import join
 import uuid
 import shutil
 from .helper import call_page_tesseract2, call_google_ocr
-from .models import Token, Log
+from .models import Token
+from ..core.models import Log
 from .dependencies import get_token
 
 router = APIRouter(
@@ -19,7 +20,7 @@ router = APIRouter(
 @router.post(
 	'/tesseract',
 )
-def infer_ocr(
+async def infer_tesseract_ocr(
 	image: UploadFile = File(...),
 	language: str = Form('english'),
 	bilingual: bool = Form(False),
@@ -31,6 +32,11 @@ def infer_ocr(
 	))
 	with open(location, 'wb+') as f:
 		shutil.copyfileobj(image.file, f)
+	await Log.create(
+		version='tesseract',
+		language=language,
+		image_count=1
+	)
 	return call_page_tesseract2(language, tmp.name, bilingual)
 
 
@@ -85,5 +91,10 @@ async def infer_google_ocr(
 		)
 	else:
 		await token.update(quota=token.quota-1)
-	await Log.create(token)
+	await Log.create(
+		user_token=token.id,
+		language=language,
+		version='google',
+		image_count=1,
+	)
 	return call_google_ocr(language, tmp.name)

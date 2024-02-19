@@ -50,7 +50,7 @@ def load_model(modality: str, language: str, modelid: str) -> None:
 
 
 
-def process_images(images: List[str], save_path) -> None:
+def process_images(images: List[str], save_path) -> int:
 	"""
 	processes all the images in the given list.
 	it saves all the images in the save_path folder.
@@ -64,6 +64,7 @@ def process_images(images: List[str], save_path) -> None:
 				status_code=400,
 				detail=f'Error while decoding and saving the image #{idx}',
 			)
+	return len(images)
 
 
 def process_language(lcode: LanguageEnum) -> Tuple[str, str]:
@@ -269,36 +270,28 @@ def call_page_tesseract(language, folder):
 		)
 	return out
 
-def call_page_tesseract_bi(language, folder):
-	a = [join(folder, i) for i in os.listdir(folder)]
-	ret = pytesseract.image_to_data(a[0], lang=f'eng+{TESS_LANG[language]}').strip().split('\n')
-	del ret[0]
-	ret = [i.split('\t')[6:] for i in ret if i[10]!='-1']
-	out = []
-	for i in ret:
-		out.append(
-			OCRImageResponse(
-				text=i[-1].strip(),
-				meta={'coords': list(map(int, i[:4]))}
-			)
-		)
-	return out
-
-def call_page_tesseract2(language, folder, bilingual: bool = False):
-	a = [join(folder, i) for i in os.listdir(folder)]
-	if bilingual:
-		ret = pytesseract.image_to_string(a[0], lang='eng+'+TESS_LANG[language]).strip()
-	else:
-		ret = pytesseract.image_to_string(a[0], lang=TESS_LANG[language]).strip()
-	return {'text': ret}
+# def call_page_tesseract_bi(language, folder):
+# 	a = [join(folder, i) for i in os.listdir(folder)]
+# 	ret = pytesseract.image_to_data(a[0], lang=f'eng+{TESS_LANG[language]}').strip().split('\n')
+# 	del ret[0]
+# 	ret = [i.split('\t')[6:] for i in ret if i[10]!='-1']
+# 	out = []
+# 	for i in ret:
+# 		out.append(
+# 			OCRImageResponse(
+# 				text=i[-1].strip(),
+# 				meta={'coords': list(map(int, i[:4]))}
+# 			)
+# 		)
+# 	return out
 
 
-def call_tesseract(language, folder):
-	a = os.listdir(folder)
-	a = [join(folder, i) for i in a]
-	add_padding(a, random.randint(10, 10))
-	ret = {}
-	for i in tqdm(a):
-		ret[basename(i)] = pytesseract.image_to_string(i, lang=TESS_LANG[language]).strip()
-	with open(join(folder, 'out.json'), 'w', encoding='utf-8') as f:
-		f.write(json.dumps(ret, indent=4))
+# def call_tesseract(language, folder):
+# 	a = os.listdir(folder)
+# 	a = [join(folder, i) for i in a]
+# 	add_padding(a, random.randint(10, 10))
+# 	ret = {}
+# 	for i in tqdm(a):
+# 		ret[basename(i)] = pytesseract.image_to_string(i, lang=TESS_LANG[language]).strip()
+# 	with open(join(folder, 'out.json'), 'w', encoding='utf-8') as f:
+# 		f.write(json.dumps(ret, indent=4))

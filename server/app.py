@@ -10,7 +10,7 @@ from tempfile import TemporaryDirectory
 from typing import List
 
 from dateutil.tz import gettz
-from fastapi import Depends, FastAPI, Form, Request, UploadFile, File
+from fastapi import Depends, FastAPI, Form, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 from .dependencies import save_uploaded_images
@@ -20,6 +20,7 @@ from .modules.cegis.routes import router as cegis_router
 from .modules.ulca.routes import router as ulca_router
 from .modules.external.routes import router as external_router
 from .modules.iitb_v2.routes import router as iitb_v2_router
+from .modules.core.models import Log
 from server.config import IMAGE_FOLDER
 
 from .database import close_mongo_connection, connect_to_mongo
@@ -83,34 +84,16 @@ def save_uploaded_image(image: UploadFile) -> str:
 	return location
 
 
-# @app.post(
-# 	'/ocr/tesseract',
-# 	tags=['OCR'],
-# )
-# def infer_ocr(
-# 	image: UploadFile = File(...),
-# 	language: str = Form('english'),
-# 	bilingual: bool = Form(False),
-# ):
-# 	tmp = TemporaryDirectory(prefix='hh')
-# 	location = join(tmp.name, '{}.{}'.format(
-# 		str(uuid.uuid4()),
-# 		image.filename.strip().split('.')[-1]
-# 	))
-# 	with open(location, 'wb+') as f:
-# 		shutil.copyfileobj(image.file, f)
-# 	return call_page_tesseract2(language, tmp.name, bilingual)
-
 @app.post(
 	'/ocr/infer',
 	tags=['OCR'],
 	response_model=List[OCRImageResponse],
 	response_model_exclude_none=True
 )
-def infer_ocr(ocr_request: OCRRequest) -> List[OCRImageResponse]:
+async def infer_ocr(ocr_request: OCRRequest) -> List[OCRImageResponse]:
 	tmp = TemporaryDirectory(prefix='ocr_images')
 	# tmp = CustomDir(name='/home/ocr/test')
-	process_images(ocr_request.imageContent, tmp.name)
+	image_count = process_images(ocr_request.imageContent, tmp.name)
 
 	lcode, language = process_language(ocr_request.language)
 	version = process_version(ocr_request.version)
@@ -131,12 +114,12 @@ def infer_ocr(ocr_request: OCRRequest) -> List[OCRImageResponse]:
 		return call_page_pu(language, tmp.name)
 	elif version == 'v1_st_iitj':
 		call(f'./infer_v1_iitj.sh {modality} {language} {tmp.name}')
-	elif version == 'tesseract':
-		folder = tmp.name
-		call_tesseract(language, tmp.name)
-	elif version == 'tesseract_bi':
-		folder = tmp.name
-		return call_page_tesseract_bi(language, folder)
+	# elif version == 'tesseract':
+	# 	folder = tmp.name
+	# 	call_tesseract(language, tmp.name)
+	# elif version == 'tesseract_bi':
+	# 	folder = tmp.name
+	# 	return call_page_tesseract_bi(language, folder)
 	else:
 		if ocr_request.meta.get('include_probability', False):
 			call(
@@ -148,7 +131,14 @@ def infer_ocr(ocr_request: OCRRequest) -> List[OCRImageResponse]:
 				f'./infer.sh {modality} {language} {tmp.name} {version}',
 				shell=True
 			)
-	return process_ocr_output(tmp.name)
+	ret = process_ocr_output(tmp.name)
+	await Log.create(
+		version=version,
+		language=language,
+		modality=modality,
+		image_count=image_count
+	)
+	return ret
 
 
 @app.post(
@@ -192,17 +182,6 @@ def infer_ocr(
 			shell=True
 		)
 	return process_ocr_output(folder)
-	# if version == 'v0':
-	# 	load_model(modality, language, version)
-	# 	call(f'./infer_v0.sh {modality} {language}', shell=True)
-	# elif version == 'v1_iitb':
-	# 	call(f'./infer_v1_iitb.sh {modality} {language} /home/ocr/website/images', shell=True)
-	# else:
-	# 	call(
-	# 		f'./infer.sh {modality} {language} /home/ocr/website/images {version}',
-	# 		shell=True
-	# 	)
-	# return process_ocr_output('/home/ocr/website/images')
 
 
 @app.post(
