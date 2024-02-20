@@ -52,6 +52,21 @@ async def fetch_all_token(
 			detail='Invalid Password'
 		)
 
+@router.post('/token/refresh', response_model=Token)
+async def fetch_all_token(
+	id: str
+) -> Token:
+	tokens = await Token.filter(id=id)
+	if tokens and len(tokens) == 1:
+		token = tokens[0]
+		await token.update(quota=1000)
+		return await token.refresh()
+	else:
+		raise HTTPException(
+			status_code=400,
+			detail='Invalid ID'
+		)
+
 
 @router.post(
 	'/google/token',
