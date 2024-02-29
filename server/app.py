@@ -148,7 +148,7 @@ def infer_ocr(
 	version: VersionEnum = Form(VersionEnum.v2),
 ) -> List[OCRImageResponse]:
 	print(images)
-	_, language = process_language(language)
+	lcode, language = process_language(language)
 	version = process_version(version)
 	modality = process_modality(modality)
 
@@ -167,6 +167,8 @@ def infer_ocr(
 		)
 	elif version == 'v1_iitb':
 		call(f'./infer_v1_iitb.sh {modality} {language} {folder}', shell=True)
+	elif version == 'v2_iitb':
+		call(f'./infer_v2_iitb.sh {modality} {lcode} {folder}', shell=True)
 	elif version == 'tesseract':
 		# call_tesseract(language, folder)
 		return call_page_tesseract(language, folder)
