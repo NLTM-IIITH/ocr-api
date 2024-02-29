@@ -1,7 +1,9 @@
 import base64
+import asyncio
 import random
 from PIL import Image
 from tqdm import tqdm
+import subprocess
 import json
 import os
 from os.path import basename, join
@@ -239,16 +241,18 @@ def add_padding(images, size: int):
 		out.paste(img, (size, size))
 		out.save(image)
 
-def call_page_pu(language, folder):
+async def call_page_pu(language, folder):
 	a = [join(folder, i) for i in os.listdir(folder)]
 	b = os.getcwd()
 	code_path = '/home/ocr/models/code/v1_pu/{}'.format(language)
-	os.system('cd {} && /home/ocr/temp_venv/bin/python {}/main.py {} && cd {}'.format(
-		code_path,
-		code_path,
-		a[0],
-		b
-	))
+	command = [
+		'/home/ocr/temp_venv/bin/python',
+		f'{code_path}/main.py',
+		a[0]
+	]
+	process = await asyncio.create_subprocess_exec(*command, cwd=code_path)
+	await process.wait()
+	os.chdir(b)
 	with open('{}/output.txt'.format(code_path), 'r', encoding='utf-8') as f:
 		ret = f.read().strip()
 	return [

@@ -111,15 +111,9 @@ async def infer_ocr(ocr_request: OCRRequest) -> List[OCRImageResponse]:
 	elif version == 'v2_iitb':
 		call(f'./infer_v2_iitb.sh {modality} {lcode} {tmp.name}', shell=True)
 	elif version == 'v1_pu':
-		return call_page_pu(language, tmp.name)
+		return await call_page_pu(language, tmp.name)
 	elif version == 'v1_st_iitj':
 		call(f'./infer_v1_iitj.sh {modality} {language} {tmp.name}')
-	# elif version == 'tesseract':
-	# 	folder = tmp.name
-	# 	call_tesseract(language, tmp.name)
-	# elif version == 'tesseract_bi':
-	# 	folder = tmp.name
-	# 	return call_page_tesseract_bi(language, folder)
 	else:
 		if ocr_request.meta.get('include_probability', False):
 			call(
