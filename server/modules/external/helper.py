@@ -3,6 +3,7 @@ import cv2
 import imghdr
 import json
 import os
+import time
 import shutil
 from datetime import datetime
 from os.path import join
@@ -60,7 +61,6 @@ def parse_google_response(response):
 					t = ''
 					for symbol in word.symbols:
 						t += str(symbol.text)
-					print(t)
 					x = {
 						'text': t.strip(),
 						'bounding_box': {
@@ -111,13 +111,27 @@ def call_google_ocr(language, folder):
 	ret = []
 	client = vision.ImageAnnotatorClient()
 	for i in a:
+		tic1 = time.time()
+
 		with open(i, 'rb') as f:
 			img = vision.Image(content=f.read())
+
+		tic1 = round(float(time.time() - tic1), 2)
+		tic2 = time.time()
+
 		response = client.document_text_detection(
 			image=img,
 			image_context={
 				'language_hints': [language]
 			} if language else {}
 		)
+
+		tic2 = round(float(time.time() - tic2), 2)
+		tic3 = time.time()
+
 		ret.append(parse_google_response(response))
+
+		tic3 = round(float(time.time() - tic3), 2)
+
+		print(f'[{tic1}s / {tic2}s / {tic3}s] Time takes to load image, call google ocr, and parse the response')
 	return ret
