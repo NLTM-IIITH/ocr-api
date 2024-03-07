@@ -141,7 +141,7 @@ async def infer_ocr(ocr_request: OCRRequest) -> List[OCRImageResponse]:
 	response_model=List[OCRImageResponse],
 	response_model_exclude_none=True
 )
-def infer_ocr(
+async def infer_ocr(
 	images: List[UploadFile] = Depends(save_uploaded_images),
 	language: LanguageEnum = Form(LanguageEnum.hi),
 	modality: ModalityEnum = Form(ModalityEnum.printed),
@@ -169,6 +169,8 @@ def infer_ocr(
 		call(f'./infer_v1_iitb.sh {modality} {language} {folder}', shell=True)
 	elif version == 'v2_iitb':
 		call(f'./infer_v2_iitb.sh {modality} {lcode} {folder}', shell=True)
+	elif version == 'v1_pu':
+		return await call_page_pu(language, folder)
 	elif version == 'tesseract':
 		# call_tesseract(language, folder)
 		return call_page_tesseract(language, folder)
