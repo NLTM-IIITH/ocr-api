@@ -15,7 +15,6 @@ echo "Performing Inference for $VERSION $LANGUAGE $MODALITY Task"
 
 MODEL_DIR="/home/ocr/models/pretrained/$VERSION/$MODALITY/$LANGUAGE"
 
-echo "Checking for model dir"
 if [ ! -d "$MODEL_DIR" ]; then
 	echo "$MODEL_DIR : No such Directory"
 	exit
@@ -23,7 +22,6 @@ else
 	echo -e "MODEL_DIR\t$MODEL_DIR"
 fi
 
-echo "Checking for data dir"
 if [ ! -d "$DATA_DIR" ]; then
 	echo "$DATA_DIR : Enter a valid data directory"
 	exit
