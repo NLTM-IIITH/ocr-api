@@ -1,4 +1,6 @@
 from subprocess import call
+from PIL import Image
+import io
 
 from fastapi import APIRouter, Request, UploadFile, File, Form, Depends, HTTPException
 from tempfile import TemporaryDirectory
@@ -24,14 +26,21 @@ async def infer_tesseract_ocr(
 	image: UploadFile = File(...),
 	language: str = Form('english'),
 	bilingual: bool = Form(False),
+	pad_a4: bool = Form(False)
 ):
 	tmp = TemporaryDirectory()
 	location = join(tmp.name, '{}.{}'.format(
 		str(uuid.uuid4()),
 		image.filename.strip().split('.')[-1]
 	))
-	with open(location, 'wb+') as f:
-		shutil.copyfileobj(image.file, f)
+	if pad_a4:
+		img = Image.open(io.BytesIO(await image.read()))
+		new_img = Image.new('RGB', (2480,3508), (255,255,255))
+		new_img.paste(img, (100, 100))
+		new_img.convert('RGB').save(location)
+	else:
+		with open(location, 'wb+') as f:
+			shutil.copyfileobj(image.file, f)
 	await Log.create(
 		version='tesseract',
 		language=language,
