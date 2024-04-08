@@ -1,4 +1,5 @@
 import base64
+import tempfile
 import asyncio
 import random
 from PIL import Image
@@ -6,7 +7,7 @@ from tqdm import tqdm
 import subprocess
 import json
 import os
-from os.path import basename, join
+from os.path import basename, join, splitext
 from subprocess import call, check_output
 from typing import List, Tuple
 
@@ -97,7 +98,7 @@ def verify_model(language, version, modality):
 	try:
 		# support for minor languages
 		if language in minor_languages:
-			assert version == 'v4_robust'
+			assert version in ('v4_robust', 'v4.15m')
 		elif version == 'v2':
 			assert language != 'english'
 		elif version == 'v2_robust':
@@ -261,41 +262,44 @@ async def call_page_pu(language, folder):
 
 def call_page_tesseract(language, folder):
 	a = [join(folder, i) for i in os.listdir(folder)]
-	ret = pytesseract.image_to_data(a[0], lang=TESS_LANG[language]).strip().split('\n')
-	del ret[0]
-	ret = [i.split('\t')[6:] for i in ret if i[10]!='-1']
-	out = []
-	for i in ret:
-		out.append(
+	try:
+		a.sort(key=lambda x:int(splitext(basename(x))[0]))
+	except:
+		a.sort()
+	lang = TESS_LANG[language]
+	ret = []
+	for i in tqdm(a, desc='processing tesseract'):
+		x = pytesseract.image_to_string(i, lang=lang).strip()
+		ret.append(
 			OCRImageResponse(
-				text=i[-1].strip(),
-				meta={'coords': list(map(int, i[:4]))}
+				text=x,
+				meta={}
 			)
 		)
-	return out
+	return ret
 
-# def call_page_tesseract_bi(language, folder):
-# 	a = [join(folder, i) for i in os.listdir(folder)]
-# 	ret = pytesseract.image_to_data(a[0], lang=f'eng+{TESS_LANG[language]}').strip().split('\n')
-# 	del ret[0]
-# 	ret = [i.split('\t')[6:] for i in ret if i[10]!='-1']
-# 	out = []
-# 	for i in ret:
-# 		out.append(
-# 			OCRImageResponse(
-# 				text=i[-1].strip(),
-# 				meta={'coords': list(map(int, i[:4]))}
-# 			)
-# 		)
-# 	return out
-
-
-# def call_tesseract(language, folder):
-# 	a = os.listdir(folder)
-# 	a = [join(folder, i) for i in a]
-# 	add_padding(a, random.randint(10, 10))
-# 	ret = {}
-# 	for i in tqdm(a):
-# 		ret[basename(i)] = pytesseract.image_to_string(i, lang=TESS_LANG[language]).strip()
-# 	with open(join(folder, 'out.json'), 'w', encoding='utf-8') as f:
-# 		f.write(json.dumps(ret, indent=4))
+def call_page_tesseract_pad(language, folder):
+	tmp = tempfile.TemporaryDirectory()
+	a = []
+	for i in tqdm(os.listdir(folder), desc='Padding images'):
+		location = join(tmp.name, i)
+		img = Image.open(join(folder, i))
+		new_img = Image.new('RGB', (2480,3508), (255,255,255))
+		new_img.paste(img, (100, 100))
+		new_img.convert('RGB').save(location)
+		a.append(location)
+	try:
+		a.sort(key=lambda x:int(splitext(basename(x))[0]))
+	except:
+		a.sort()
+	lang = TESS_LANG[language]
+	ret = []
+	for i in tqdm(a, desc='processing tesseract'):
+		x = pytesseract.image_to_string(i, lang=lang).strip()
+		ret.append(
+			OCRImageResponse(
+				text=x,
+				meta={}
+			)
+		)
+	return ret

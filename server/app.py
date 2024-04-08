@@ -110,10 +110,16 @@ async def infer_ocr(ocr_request: OCRRequest) -> List[OCRImageResponse]:
 		call(f'./infer_v1_iitb.sh {modality} {language} {tmp.name}', shell=True)
 	elif version == 'v2_iitb':
 		call(f'./infer_v2_iitb.sh {modality} {lcode} {tmp.name}', shell=True)
+	elif version == 'v3_iitb':
+		call(f'./infer_v3_iitb.sh {modality} {lcode} {tmp.name}', shell=True)
 	elif version == 'v1_pu':
 		return await call_page_pu(language, tmp.name)
 	elif version == 'v1_st_iitj':
 		call(f'./infer_v1_iitj.sh {modality} {language} {tmp.name}')
+	elif version == 'tesseract_pad':
+		return call_page_tesseract_pad(language, tmp.name)
+	elif version == 'tesseract':
+		return call_page_tesseract(language, tmp.name)
 	else:
 		if ocr_request.meta.get('include_probability', False):
 			call(
@@ -169,12 +175,15 @@ async def infer_ocr(
 		call(f'./infer_v1_iitb.sh {modality} {language} {folder}', shell=True)
 	elif version == 'v2_iitb':
 		call(f'./infer_v2_iitb.sh {modality} {lcode} {folder}', shell=True)
+	elif version == 'v3_iitb':
+		call(f'./infer_v3_iitb.sh {modality} {lcode} {folder}', shell=True)
 	elif version == 'v1_pu':
 		return await call_page_pu(language, folder)
 	elif version == 'tesseract':
 		# call_tesseract(language, folder)
 		return call_page_tesseract(language, folder)
 	else:
+		print(modality, language, folder, version)
 		call(
 			f'./infer.sh {modality} {language} {folder} {version}',
 			shell=True
