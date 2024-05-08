@@ -100,7 +100,7 @@ async def infer_ocr(ocr_request: OCRRequest) -> List[OCRImageResponse]:
 	modality = process_modality(ocr_request.modality)
 	print('before verification', language, version, modality)
 	verify_model(language, version, modality)
-	if 'bilingual' in version:
+	if 'bilingual' in version or version.startswith('parliament'):
 		language = f'english_{language}'
 	print(language, version, modality)
 	if version == 'v0':

@@ -132,6 +132,13 @@ class VersionEnum(str, Enum):
 
 	v4_15_m = 'v4.15m'
 
+	v6 = 'V-01.06.00.00'
+	v4_18 = 'V-01.04.00.18'
+	v4_roobust_18 = 'V-01.04.01.18'
+
+	parliament = 'parliament'
+	parliamentr = 'parliamentr'
+
 	lipikar = 'lipikar'
 	v1_pu = 'v1_pu'
 	v2_iitb = 'v2_iitb'
