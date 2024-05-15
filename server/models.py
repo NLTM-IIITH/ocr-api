@@ -134,7 +134,9 @@ class VersionEnum(str, Enum):
 
 	v6 = 'V-01.06.00.00'
 	v4_18 = 'V-01.04.00.18'
-	v4_roobust_18 = 'V-01.04.01.18'
+	v4_robust_18 = 'V-01.04.01.18'
+	v4_19 = 'V-01.04.00.19'
+	v4_robust_19 = 'V-01.04.01.19'
 
 	parliament = 'parliament'
 	parliamentr = 'parliamentr'
