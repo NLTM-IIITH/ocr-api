@@ -5,3 +5,9 @@ requests
 Pillow
 python-multipart
 google-cloud-vision
+pytesseract
+pymongo
+tqdm
+python-dateutil
+opencv-python
+motor

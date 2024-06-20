@@ -78,6 +78,51 @@ async def fetch_all_token(
 
 
 @router.post(
+	'/external/token',
+	response_model=Token
+)
+async def fetch_external_token(
+	email: str = Form(''),
+	purpose: str = Form(''),
+) -> Token:
+	existing_tokens = await Token.filter(email=email)
+	if existing_tokens:
+		return existing_tokens[0]
+	token = Token(email=email, purpose=purpose)
+	await token.save()
+	return await token.refresh()
+
+@router.post(
+	'/external'
+)
+async def infer_external_commercial_ocr(
+	image: UploadFile = File(...),
+	language: str = Form(''),
+	token: Token = Depends(get_token)
+):
+	tmp = TemporaryDirectory()
+	location = join(tmp.name, '{}.{}'.format(
+		str(uuid.uuid4()),
+		image.filename.strip().split('.')[-1]
+	))
+	with open(location, 'wb+') as f:
+		shutil.copyfileobj(image.file, f)
+	if token.quota < 1:
+		raise HTTPException(
+			status_code=400,
+			detail='Token Expired. Please fetch a new token and try again'
+		)
+	else:
+		await token.update(quota=token.quota-1)
+	await Log.create(
+		user_token=token.id,
+		language=language,
+		version='google',
+		image_count=1,
+	)
+	return call_google_ocr(language, tmp.name)
+
+@router.post(
 	'/google/token',
 	response_model=Token
 )
