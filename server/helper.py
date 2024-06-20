@@ -1,22 +1,20 @@
-import base64
-import tempfile
 import asyncio
-import random
-from PIL import Image
-from tqdm import tqdm
-import subprocess
+import base64
 import json
 import os
+import tempfile
 from os.path import basename, join, splitext
 from subprocess import call, check_output
 from typing import List, Tuple
 
 import pytesseract
 from fastapi import HTTPException
+from PIL import Image
+from tqdm import tqdm
 
 from server.config import LANGUAGES, NUMBER_LOADED_MODEL_THRESHOLD, TESS_LANG
 
-from .models import *
+from .models import LanguageEnum, ModalityEnum, OCRImageResponse, VersionEnum
 
 
 def check_loaded_model() -> List[Tuple[str, str, str]]:
@@ -62,7 +60,7 @@ def process_images(images: List[str], save_path) -> int:
         try:
             with open(join(save_path, f'{idx}.jpg'), 'wb') as f:
                 f.write(base64.b64decode(image))
-        except:
+        except Exception:
             raise HTTPException(
                 status_code=400,
                 detail=f'Error while decoding and saving the image #{idx}',
@@ -220,13 +218,12 @@ def process_ocr_output(image_folder: str) -> List[OCRImageResponse]:
     """
     process the <folder>/out.json file and returns the ocr response.
     """
-    sorting_func = lambda x:int(x[0].split('.')[0])
     try:
         with open(join(image_folder, 'out.json'), 'r', encoding='utf-8') as f:
             a = f.read().strip()
         a = json.loads(a)
         a = list(a.items())
-        a = sorted(a, key=sorting_func)
+        a = sorted(a, key=lambda x:int(x[0].split('.')[0]))
         prob_path = join(image_folder, 'prob.json')
         if os.path.exists(prob_path):
             with open(prob_path, 'r', encoding='utf-8') as f:
@@ -277,7 +274,7 @@ def call_page_tesseract(language, folder):
     a = [join(folder, i) for i in os.listdir(folder)]
     try:
         a.sort(key=lambda x:int(splitext(basename(x))[0]))
-    except:
+    except Exception:
         a.sort()
     lang = TESS_LANG[language]
     ret = []
@@ -303,7 +300,7 @@ def call_page_tesseract_pad(language, folder):
         a.append(location)
     try:
         a.sort(key=lambda x:int(splitext(basename(x))[0]))
-    except:
+    except Exception:
         a.sort()
     lang = TESS_LANG[language]
     ret = []

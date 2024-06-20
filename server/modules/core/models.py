@@ -1,10 +1,11 @@
 from datetime import datetime
+from typing import Optional
 from uuid import uuid4
-from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
 from .mixins import DBModelMixin
+
 
 class Log(BaseModel, DBModelMixin):
     id: Optional[str] = Field(default_factory=lambda: str(uuid4()))
