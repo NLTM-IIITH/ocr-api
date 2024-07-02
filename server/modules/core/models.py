@@ -23,4 +23,3 @@ class Log(BaseModel, DBModelMixin):
     async def create(cls, **kwargs):
         ret = cls(**kwargs)
         await ret.save()
-        return await ret.refresh()

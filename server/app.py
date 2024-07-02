@@ -16,12 +16,27 @@ from server.config import IMAGE_FOLDER
 
 from .database import close_mongo_connection, connect_to_mongo
 from .dependencies import save_uploaded_images
-from .helper import (call_page_pu, call_page_tesseract,
-                     call_page_tesseract_pad, load_model, process_images,
-                     process_language, process_modality, process_ocr_output,
-                     process_version, verify_model)
-from .models import (LanguageEnum, ModalityEnum, OCRImageResponse, OCRRequest,
-                     PostprocessImageResponse, PostprocessRequest, VersionEnum)
+from .helper import (
+    call_page_pu,
+    call_page_tesseract,
+    call_page_tesseract_pad,
+    load_model,
+    process_images,
+    process_language,
+    process_modality,
+    process_ocr_output,
+    process_version,
+    verify_model,
+)
+from .models import (
+    LanguageEnum,
+    ModalityEnum,
+    OCRImageResponse,
+    OCRRequest,
+    PostprocessImageResponse,
+    PostprocessRequest,
+    VersionEnum,
+)
 from .modules.cegis.routes import router as cegis_router
 from .modules.core.models import Log
 from .modules.external.routes import router as external_router
@@ -55,7 +70,7 @@ app.include_router(iitb_v2_router)
 @app.middleware('http')
 async def log_request_timestamp(request: Request, call_next):
     local_tz = gettz('Asia/Kolkata')
-    print(f'Received request at: {datetime.now(tz=local_tz).isoformat()}')
+    print(f'Received request at: {datetime.now(tz=local_tz).isoformat()} for {request.url} from {request.client}')
     return await call_next(request)
 
 
@@ -89,7 +104,6 @@ def save_uploaded_image(image: UploadFile) -> str:
 )
 async def infer_ocr(ocr_request: OCRRequest) -> List[OCRImageResponse]:
     tmp = TemporaryDirectory(prefix='ocr_images')
-    # tmp = CustomDir(name='/home/ocr/test')
     image_count = process_images(ocr_request.imageContent, tmp.name)
 
     lcode, language = process_language(ocr_request.language)
