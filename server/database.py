@@ -1,6 +1,6 @@
 from motor.motor_asyncio import AsyncIOMotorClient
 
-from .config import *
+from .config import MONGO_DATABASE, MONGO_ENDPOINT
 
 
 class Database:

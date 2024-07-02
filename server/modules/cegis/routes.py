@@ -14,18 +14,6 @@ router = APIRouter(
 
 
 @router.post(
-    '/',
-    response_model=list[OCRImageResponse],
-    response_model_exclude_none=True
-)
-def infer_ocr(ocr_request: OCRRequest) -> list[OCRImageResponse]:
-    tmp = TemporaryDirectory(prefix='ocr_cegis')
-    process_images(ocr_request.images, tmp.name)
-    call(f'./cegis_infer.sh {tmp.name}', shell=True)
-    return process_ocr_output(tmp.name)
-
-
-@router.post(
     '/v2',
     response_model=list[OCRImageResponse],
     response_model_exclude_none=True
@@ -33,7 +21,7 @@ def infer_ocr(ocr_request: OCRRequest) -> list[OCRImageResponse]:
 def shaon_infer_ocr(ocr_request: OCRRequest) -> list[OCRImageResponse]:
     tmp = TemporaryDirectory(prefix='ocr_cegis')
     process_images(ocr_request.images, tmp.name)
-    call(f'./cegis_infer_v2.sh {tmp.name}', shell=True)
+    call(f'./cegis_infer.sh {tmp.name} v2_cegis', shell=True)
     return process_ocr_output(tmp.name)
 
 @router.post(
@@ -47,7 +35,7 @@ def cegis_v3_english_char_ocr(ocr_request: OCRRequest) -> list[OCRImageResponse]
     """
     tmp = TemporaryDirectory(prefix='ocr_cegis')
     process_images(ocr_request.images, tmp.name)
-    call(f'./cegis_infer_v3.sh {tmp.name}', shell=True)
+    call(f'./cegis_infer.sh {tmp.name} v3_cegis', shell=True)
     return process_ocr_output(tmp.name)
 
 @router.post(
@@ -61,7 +49,7 @@ def cegis_v4_english_char_ocr(ocr_request: OCRRequest) -> list[OCRImageResponse]
     """
     tmp = TemporaryDirectory(prefix='ocr_cegis')
     process_images(ocr_request.images, tmp.name)
-    call(f'./cegis_infer_v4.sh {tmp.name}', shell=True)
+    call(f'./cegis_infer.sh {tmp.name} v4_cegis', shell=True)
     return process_ocr_output(tmp.name)
 
 
@@ -76,7 +64,7 @@ def cegis_v5_ocr(ocr_request: OCRRequest) -> list[OCRImageResponse]:
     """
     tmp = TemporaryDirectory(prefix='ocr_cegis')
     process_images(ocr_request.images, tmp.name)
-    call(f'./cegis_infer_v4.sh {tmp.name}', shell=True)
+    call(f'./cegis_infer.sh {tmp.name} v4_cegis', shell=True)
     return process_ocr_output(tmp.name)
 
 
@@ -91,5 +79,5 @@ def cegis_v6_ocr(ocr_request: OCRRequest) -> list[OCRImageResponse]:
     """
     tmp = TemporaryDirectory(prefix='ocr_cegis')
     process_images(ocr_request.images, tmp.name)
-    call(f'./cegis_infer_v6.sh {tmp.name}', shell=True)
+    call(f'./cegis_infer.sh {tmp.name} v6_cegis', shell=True)
     return process_ocr_output(tmp.name)
