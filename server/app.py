@@ -33,8 +33,6 @@ from .models import (
     ModalityEnum,
     OCRImageResponse,
     OCRRequest,
-    PostprocessImageResponse,
-    PostprocessRequest,
     VersionEnum,
 )
 from .modules.cegis.routes import router as cegis_router
@@ -200,99 +198,3 @@ async def infer_test_ocr(
             shell=True
         )
     return process_ocr_output(folder)
-
-
-@app.post(
-    '/ocr/newpostprocess',
-    tags=['OCR'],
-    response_model=List[PostprocessImageResponse],
-    response_model_exclude_none=True,
-)
-def OCR_newpostprocess(request: PostprocessRequest) -> List[PostprocessImageResponse]:
-    """
-    This is the endpoint to postprocess the OCR output.
-    This endpoints takes the same input as OCRResponse and outputs
-    a list of acceptable alternatives for each word in the output.
-    """
-    main_folder = '/home/ocr/temp'
-    os.system(f'rm -rf {main_folder}/*')
-    data_prob_folder = join(main_folder, 'data_prob')
-    max_prob_folder = join(main_folder, 'max_prob')
-    os.system(f'mkdir {data_prob_folder}')
-    os.system(f'mkdir {max_prob_folder}')
-    vocab_path = join(main_folder, 'vocabulary.txt')
-    ocr_path = join(main_folder, 'ocr_output.txt')
-    lexicon_path = join(main_folder, 'lexicon.txt')
-    with open(vocab_path, 'w', encoding='utf-8') as f:
-        f.write('\n'.join(request.vocabulary))
-    with open(lexicon_path, 'w', encoding='utf-8') as f:
-        f.write('\n'.join(request.lexicon))
-    ocr_output = []
-    for i,v in enumerate(request.words):
-        print(f'processing for -> {i+1}')
-        ocr_output.append(f'{i+1}.jpg\t{v.text}')
-        with open(join(data_prob_folder, f'{i+1}.pts'), 'wb') as f:
-            f.write(base64.b64decode(v.meta['data_prob']))
-        with open(join(max_prob_folder, f'{i+1}.pts'), 'wb') as f:
-            f.write(base64.b64decode(v.meta['max_prob']))
-    with open(ocr_path, 'w', encoding='utf-8') as f:
-        f.write('\n'.join(ocr_output))
-
-    call(f'./infer_newpostprocess.sh {main_folder}', shell=True)
-    a = open(join(main_folder, 'out.txt'), 'r', encoding='utf-8').read().strip().split('\n')
-    ret = []
-    for i in a:
-        x = i.strip().split(' ')
-        x = [j.strip() for j in x]
-        x = list(set(x[1:]))
-        ret.append(
-            PostprocessImageResponse(text=x)
-        )
-    return ret
-
-
-@app.post(
-    '/ocr/postprocess',
-    tags=['OCR'],
-    response_model=List[PostprocessImageResponse],
-    response_model_exclude_none=True,
-)
-def OCR_postprocess(request: PostprocessRequest) -> List[PostprocessImageResponse]:
-    """
-    This is the endpoint to postprocess the OCR output.
-    This endpoints takes the same input as OCRResponse and outputs
-    a list of acceptable alternatives for each word in the output.
-    """
-    main_folder = '/home/ocr/temp'
-    os.system(f'rm -rf {main_folder}/*')
-    data_prob_folder = join(main_folder, 'data_prob')
-    max_prob_folder = join(main_folder, 'max_prob')
-    os.system(f'mkdir {data_prob_folder}')
-    os.system(f'mkdir {max_prob_folder}')
-    vocab_path = join(main_folder, 'vocabulary.txt')
-    ocr_path = join(main_folder, 'ocr_output.txt')
-    with open(vocab_path, 'w', encoding='utf-8') as f:
-        f.write('\n'.join(request.vocabulary))
-    ocr_output = []
-    for i,v in enumerate(request.words):
-        print(f'processing for -> {i+1}')
-        ocr_output.append(f'{i+1}.jpg\t{v.text}')
-        with open(join(data_prob_folder, f'{i+1}.pts'), 'wb') as f:
-            f.write(base64.b64decode(v.meta['data_prob']))
-        with open(join(max_prob_folder, f'{i+1}.pts'), 'wb') as f:
-            f.write(base64.b64decode(v.meta['max_prob']))
-    with open(ocr_path, 'w', encoding='utf-8') as f:
-        f.write('\n'.join(ocr_output))
-
-    _, language = process_language(request.language)
-    call(f'./infer_postprocess.sh {language} {main_folder}', shell=True)
-    a = open(join(main_folder, 'out.txt'), 'r', encoding='utf-8').read().strip().split('\n')
-    ret = []
-    for i in a:
-        x = i.strip().split(' ')
-        x = [j.strip() for j in x]
-        x = list(set(x[1:]))
-        ret.append(
-            PostprocessImageResponse(text=x)
-        )
-    return ret

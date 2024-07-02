@@ -188,18 +188,3 @@ class OCRImageResponse(BaseModel):
         {},
         description='Meta information given by model for each image'
     )
-
-
-class PostprocessRequest(BaseModel):
-    language: LanguageEnum
-    vocabulary: List[str]
-    lexicon: Optional[List[str]] = []
-    words: List[OCRImageResponse]
-
-
-class PostprocessImageResponse(BaseModel):
-    text: List[str]
-    meta: Optional[Dict[Any, Any]] = Field(
-        {},
-        description='Meta information given by model for each image'
-    )
