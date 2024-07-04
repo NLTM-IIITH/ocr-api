@@ -22,6 +22,7 @@ from .helper import (call_page_pu, call_page_tesseract,
                      process_version, verify_model)
 from .models import (LanguageEnum, ModalityEnum, OCRImageResponse, OCRRequest,
                      VersionEnum)
+from .modules.auth.routes import router as auth_router
 from .modules.cegis.routes import router as cegis_router
 from .modules.core.models import Log
 from .modules.external.routes import router as external_router
@@ -49,6 +50,7 @@ app.include_router(cegis_router)
 app.include_router(ulca_router)
 app.include_router(external_router)
 app.include_router(iitb_v2_router)
+app.include_router(auth_router)
 
 
 
@@ -56,7 +58,8 @@ app.include_router(iitb_v2_router)
 async def log_request_timestamp(request: Request, call_next):
     local_tz = gettz('Asia/Kolkata')
     print(f'Received request at: {datetime.now(tz=local_tz).isoformat()} for {request.url} from {request.client}')
-    return await call_next(request)
+    ret = await call_next(request)
+    return ret
 
 
 @app.get('/ocr/ping', tags=['Testing'])
