@@ -148,6 +148,7 @@ class VersionEnum(str, Enum):
     tesseract_bi = 'tesseract_bi'
 
     v01040021 = 'V-01.04.00.21'
+    v3_st_ml = 'V-01.03.00.01'
 
 
 class OCRRequest(BaseModel):

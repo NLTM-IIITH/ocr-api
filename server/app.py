@@ -16,25 +16,12 @@ from server.config import IMAGE_FOLDER
 
 from .database import close_mongo_connection, connect_to_mongo
 from .dependencies import save_uploaded_images
-from .helper import (
-    call_page_pu,
-    call_page_tesseract,
-    call_page_tesseract_pad,
-    load_model,
-    process_images,
-    process_language,
-    process_modality,
-    process_ocr_output,
-    process_version,
-    verify_model,
-)
-from .models import (
-    LanguageEnum,
-    ModalityEnum,
-    OCRImageResponse,
-    OCRRequest,
-    VersionEnum,
-)
+from .helper import (call_page_pu, call_page_tesseract,
+                     call_page_tesseract_pad, load_model, process_images,
+                     process_language, process_modality, process_ocr_output,
+                     process_version, verify_model)
+from .models import (LanguageEnum, ModalityEnum, OCRImageResponse, OCRRequest,
+                     VersionEnum)
 from .modules.cegis.routes import router as cegis_router
 from .modules.core.models import Log
 from .modules.external.routes import router as external_router
