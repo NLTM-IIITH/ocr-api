@@ -151,6 +151,7 @@ class VersionEnum(str, Enum):
     v3_st_ml = 'V-01.03.00.01'
     v01050000 = 'V-01.05.00.00'
     v01040120 = 'V-01.04.01.20'
+    v03020001 = 'V-03.02.00.01'
 
 
 class OCRRequest(BaseModel):

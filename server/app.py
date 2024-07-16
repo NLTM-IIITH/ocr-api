@@ -174,6 +174,8 @@ async def infer_ocr(ocr_request: OCRRequest) -> List[OCRImageResponse]:
         call(f'./infer_v2_iitb.sh {modality} {lcode} {tmp.name}', shell=True)
     elif version == 'v3_iitb':
         call(f'./infer_v3_iitb.sh {modality} {lcode} {tmp.name}', shell=True)
+    elif version == 'V-03.02.00.01':
+        call(f'./infer_new_iitb.sh {modality} {lcode} {tmp.name}', shell=True)
     elif version == 'v1_pu':
         return await call_page_pu(language, tmp.name)
     elif version == 'v1_st_iitj':
@@ -239,6 +241,8 @@ async def infer_test_ocr(
         call(f'./infer_v2_iitb.sh {modality} {lcode} {folder}', shell=True)
     elif version == 'v3_iitb':
         call(f'./infer_v3_iitb.sh {modality} {lcode} {folder}', shell=True)
+    elif version == 'V-03.02.00.01':
+        call(f'./infer_new_iitb.sh {modality} {lcode} {folder}', shell=True)
     elif version == 'v1_pu':
         return await call_page_pu(language, folder)
     elif version == 'tesseract':

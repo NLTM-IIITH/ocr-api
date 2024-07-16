@@ -220,6 +220,14 @@ def verify_model(language, version, modality):
             )
         elif version == 'V-01.04.01.20' and modality == 'printed':
             assert language == 'hindi'
+        elif version == 'V-03.02.00.01' and modality in ('printed', 'handwritten'):
+            assert language in (
+                'assamese', 'bengali',
+                'gujarati', 'hindi',
+                'kannada', 'malayalam',
+                'manipuri', 'punjabi',
+                'tamil', 'telugu',
+            )
     except AssertionError:
         raise HTTPException(
             status_code=400,
