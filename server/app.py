@@ -22,6 +22,8 @@ from .helper import (call_page_pu, call_page_tesseract,
                      process_version, verify_model)
 from .models import (LanguageEnum, ModalityEnum, OCRImageResponse, OCRRequest,
                      VersionEnum)
+from .modules.auth.dependencies import get_active_user
+from .modules.auth.models import User
 from .modules.auth.routes import router as auth_router
 from .modules.cegis.routes import router as cegis_router
 from .modules.core.models import Log
@@ -82,6 +84,67 @@ def save_uploaded_image(image: UploadFile) -> str:
     with open(location, 'wb+') as f:
         shutil.copyfileobj(image.file, f)
     return location
+
+
+@app.post(
+    '/ocr/word',
+    tags=['OCR'],
+    response_model=List[OCRImageResponse],
+    response_model_exclude_none=True
+)
+async def authenticated_infer_ocr(
+    ocr_request: OCRRequest,
+    user: User = Depends(get_active_user),
+) -> List[OCRImageResponse]:
+    print(f'[{user.username}] Calling Authenticated OCR')
+    tmp = TemporaryDirectory(prefix='ocr_images')
+    image_count = process_images(ocr_request.imageContent, tmp.name)
+
+    lcode, language = process_language(ocr_request.language)
+    version = process_version(ocr_request.version)
+    modality = process_modality(ocr_request.modality)
+    print(f'[{user.username}] before verification', language, version, modality)
+    verify_model(language, version, modality)
+    if 'bilingual' in version or version.startswith('parliament'):
+        language = f'english_{language}'
+    print(f'[{user.username}]', language, version, modality)
+    if version == 'v0':
+        load_model(modality, language, version)
+        call(f'./infer_v0.sh {modality} {language}', shell=True)
+    elif version == 'v1_iitb':
+        call(f'./infer_v1_iitb.sh {modality} {language} {tmp.name}', shell=True)
+    elif version == 'v2_iitb':
+        call(f'./infer_v2_iitb.sh {modality} {lcode} {tmp.name}', shell=True)
+    elif version == 'v3_iitb':
+        call(f'./infer_v3_iitb.sh {modality} {lcode} {tmp.name}', shell=True)
+    elif version == 'v1_pu':
+        return await call_page_pu(language, tmp.name)
+    elif version == 'v1_st_iitj':
+        call(f'./infer_v1_iitj.sh {modality} {language} {tmp.name}')
+    elif version == 'tesseract_pad':
+        return call_page_tesseract_pad(language, tmp.name)
+    elif version == 'tesseract':
+        return call_page_tesseract(language, tmp.name)
+    else:
+        if ocr_request.meta.get('include_probability', False):
+            call(
+                f'./infer_prob.sh {modality} {language} {tmp.name} {version}',
+                shell=True
+            )
+        else:
+            call(
+                f'./infer.sh {modality} {language} {tmp.name} {version}',
+                shell=True
+            )
+    ret = process_ocr_output(tmp.name)
+    await Log.create(
+        version=version,
+        user_token=user.id,
+        language=language,
+        modality=modality,
+        image_count=image_count
+    )
+    return ret
 
 
 @app.post(
