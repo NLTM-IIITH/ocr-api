@@ -1,25 +1,26 @@
 import base64
-import cv2
 import imghdr
 import json
+import multiprocessing
 import os
-import time
 import shutil
+import time
 from datetime import datetime
-from os.path import join
+from os.path import basename, join
 from tempfile import TemporaryDirectory
 from typing import List
 from uuid import uuid4
 
+import cv2
+import pytesseract
 import pytz
 import requests
 from fastapi import HTTPException
 from fastapi.responses import FileResponse
+from google.cloud import vision
 from PIL import Image
 
-import pytesseract
 from server.config import LANGUAGES, NUMBER_LOADED_MODEL_THRESHOLD, TESS_LANG
-from google.cloud import vision
 
 from .models import *
 
@@ -40,7 +41,24 @@ LANGUAGES = {
 	'ur': 'urdu',
 }
 
+def call_single_tess(image_info):
+	image_path, language, bilingual = image_info
+	print(f'Processing file: {basename(image_path)}')
+	if bilingual:
+		out = pytesseract.image_to_string(image_path, lang='eng'+TESS_LANG[language]).strip()
+	else:
+		out = pytesseract.image_to_string(image_path, lang=TESS_LANG[language]).strip()
+	return {'text': out, 'regions': []}
+
 def call_page_tesseract2(language, folder, bilingual: bool = False):
+	images = [join(folder, i) for i in os.listdir(folder)]
+	infos = [(i, language, bilingual) for i in images]
+	with multiprocessing.Pool(processes=5) as pool:
+		ret = pool.map(call_single_tess, infos)
+	return ret
+
+
+def call_page_tesseract_unbulk(language, folder, bilingual: bool = False):
 	a = [join(folder, i) for i in os.listdir(folder)]
 	if bilingual:
 		ret = pytesseract.image_to_string(a[0], lang='eng+'+TESS_LANG[language]).strip()

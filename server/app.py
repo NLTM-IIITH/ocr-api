@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import os
 import shutil
@@ -30,6 +31,24 @@ from .modules.core.models import Log
 from .modules.external.routes import router as external_router
 from .modules.iitb_v2.routes import router as iitb_v2_router
 from .modules.ulca.routes import router as ulca_router
+
+
+async def run(command):
+    process = await asyncio.create_subprocess_shell(
+        command,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE
+    )
+
+    stdout, stderr = await process.communicate()
+
+    if process.returncode == 0:
+        print(f'Success: {stdout.decode()}')
+    else:
+        print(f'Error: {stderr.decode()}')
+
+    return process.returncode
+
 
 app = FastAPI(
     title='OCR API',
@@ -175,7 +194,10 @@ async def infer_ocr(ocr_request: OCRRequest) -> List[OCRImageResponse]:
     elif version == 'v3_iitb':
         call(f'./infer_v3_iitb.sh {modality} {lcode} {tmp.name}', shell=True)
     elif version == 'V-03.02.00.01':
-        call(f'./infer_new_iitb.sh {modality} {lcode} {tmp.name}', shell=True)
+        # call(f'./infer_new_iitb2.sh {modality} {lcode} {tmp.name}', shell=True)
+        await run(f'./infer_new_iitb2.sh {modality} {lcode} {tmp.name}')
+    elif version == 'V-03.02.00.02':
+        call(f'./infer_new_iitb2.sh {modality} {lcode} {tmp.name}', shell=True)
     elif version == 'v1_pu':
         return await call_page_pu(language, tmp.name)
     elif version == 'v1_st_iitj':
@@ -191,9 +213,12 @@ async def infer_ocr(ocr_request: OCRRequest) -> List[OCRImageResponse]:
                 shell=True
             )
         else:
-            call(
-                f'./infer.sh {modality} {language} {tmp.name} {version}',
-                shell=True
+            # call(
+            #     f'./infer.sh {modality} {language} {tmp.name} {version}',
+            #     shell=True
+            # )
+            await run(
+                f'./infer.sh {modality} {language} {tmp.name} {version}'
             )
     ret = process_ocr_output(tmp.name)
     await Log.create(
@@ -243,6 +268,8 @@ async def infer_test_ocr(
         call(f'./infer_v3_iitb.sh {modality} {lcode} {folder}', shell=True)
     elif version == 'V-03.02.00.01':
         call(f'./infer_new_iitb.sh {modality} {lcode} {folder}', shell=True)
+    elif version == 'V-03.02.00.02':
+        call(f'./infer_new_iitb2.sh {modality} {lcode} {folder}', shell=True)
     elif version == 'v1_pu':
         return await call_page_pu(language, folder)
     elif version == 'tesseract':

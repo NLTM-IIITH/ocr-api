@@ -10,9 +10,8 @@ from typing import List, Tuple
 import pytesseract
 from fastapi import HTTPException
 from PIL import Image
-from tqdm import tqdm
-
 from server.config import LANGUAGES, NUMBER_LOADED_MODEL_THRESHOLD, TESS_LANG
+from tqdm import tqdm
 
 from .models import LanguageEnum, ModalityEnum, OCRImageResponse, VersionEnum
 
@@ -96,7 +95,7 @@ def verify_model(language, version, modality):
     try:
         # support for minor languages
         if language in minor_languages:
-            assert version in ('v4_robust', 'v4.15m')
+            assert version in ('v4_robust', 'v4.15m', 'V-01.04.06.00', 'v1_pu', 'v5_robust', 'v5_robustbilingual')
         elif version == 'v2':
             assert language != 'english'
         elif version == 'v2_robust':
@@ -185,7 +184,7 @@ def verify_model(language, version, modality):
                 'marathi',
             ]
         elif version == 'v1_st_iitj':
-            assert modality == 'scenetext' and language not in [
+            assert modality == 'scenetext' and language in [
                     'hindi',
                     'english',
                     'assamese',
@@ -206,7 +205,8 @@ def verify_model(language, version, modality):
                 'bengali', 'hindi',
                 'marathi', 'oriya',
                 'punjabi', 'tamil',
-                'telugu',
+                'telugu', 'kannada',
+                'malayalam',
             )
         elif version == 'V-01.03.00.01' and modality == 'scenetext':
             assert language == 'malayalam'
@@ -220,13 +220,38 @@ def verify_model(language, version, modality):
             )
         elif version == 'V-01.04.01.20' and modality == 'printed':
             assert language == 'hindi'
-        elif version == 'V-03.02.00.01' and modality in ('printed', 'handwritten'):
+        elif version == 'V-03.02.00.01' and modality == 'printed':
             assert language in (
                 'assamese', 'bengali',
                 'gujarati', 'hindi',
                 'kannada', 'malayalam',
                 'manipuri', 'punjabi',
                 'tamil', 'telugu',
+                'marathi', 'oriya',
+                'urdu',
+            )
+        elif version == 'V-03.02.00.02' and modality == 'printed':
+            assert language in (
+                'assamese', 'bengali',
+                'gujarati', 'hindi',
+                'kannada', 'malayalam',
+                'manipuri', 'punjabi',
+                'tamil', 'telugu',
+                'marathi', 'oriya',
+                'urdu',
+            )
+        elif version == 'V-01.07.00.00' and modality == 'printed':
+            assert language in (
+                'assamese', 'bengali',
+            )
+        elif version == 'V-01.04.06.00' and modality == 'printed':
+            assert language == 'santali'
+        elif version == 'V-04.00.00.01' and modality == 'scenetext':
+            assert language in (
+                'assamese', 'gujarati',
+                'hindi', 'kannada',
+                'malayalam', 'punjabi',
+                'tamil', 'english',
             )
     except AssertionError:
         raise HTTPException(

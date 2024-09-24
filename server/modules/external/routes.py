@@ -1,23 +1,55 @@
-from subprocess import call
-from PIL import Image
 import io
-
-from fastapi import APIRouter, Request, UploadFile, File, Form, Depends, HTTPException
-from tempfile import TemporaryDirectory
-from os.path import join
-
-import uuid
 import shutil
-from .helper import call_page_tesseract2, call_google_ocr
-from .models import Token
+import uuid
+from os.path import join
+from subprocess import call
+from tempfile import TemporaryDirectory
+
+from fastapi import (APIRouter, Depends, File, Form, HTTPException, Request,
+                     UploadFile)
+from PIL import Image
+
 from ..core.models import Log
 from .dependencies import get_token
+from .helper import (call_google_ocr, call_page_tesseract2,
+                     call_page_tesseract_unbulk)
+from .models import Token
 
 router = APIRouter(
 	prefix='/ocr',
 	tags=['External OCR APIs'],
 )
 
+
+@router.post(
+	'/tesseract/bulk',
+)
+async def infer_tesseract_ocr_bulk(
+	images: list[UploadFile],
+	language: str = Form('english'),
+	bilingual: bool = Form(False),
+	pad_a4: bool = Form(False)
+):
+	tmp = TemporaryDirectory()
+	for image in images:
+		location = join(tmp.name, '{}.{}'.format(
+			str(uuid.uuid4()),
+			image.filename.strip().split('.')[-1]
+		))
+		if pad_a4:
+			img = Image.open(io.BytesIO(await image.read()))
+			new_img = Image.new('RGB', (2480,3508), (255,255,255))
+			new_img.paste(img, (100, 100))
+			new_img.convert('RGB').save(location)
+		else:
+			with open(location, 'wb') as f:
+				shutil.copyfileobj(image.file, f)
+	await Log.create(
+		version='tesseract',
+		language=language,
+		image_count=1
+	)
+	return call_page_tesseract2(language, tmp.name, bilingual)
 
 @router.post(
 	'/tesseract',
@@ -46,7 +78,7 @@ async def infer_tesseract_ocr(
 		language=language,
 		image_count=1
 	)
-	return call_page_tesseract2(language, tmp.name, bilingual)
+	return call_page_tesseract_unbulk(language, tmp.name, bilingual)
 
 
 @router.get('/token', response_model=list[Token])
