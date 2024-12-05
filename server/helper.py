@@ -10,8 +10,9 @@ from typing import List, Tuple
 import pytesseract
 from fastapi import HTTPException
 from PIL import Image
-from server.config import LANGUAGES, NUMBER_LOADED_MODEL_THRESHOLD, TESS_LANG
 from tqdm import tqdm
+
+from server.config import LANGUAGES, NUMBER_LOADED_MODEL_THRESHOLD, TESS_LANG
 
 from .models import LanguageEnum, ModalityEnum, OCRImageResponse, VersionEnum
 
@@ -73,8 +74,11 @@ def process_language(lcode: LanguageEnum) -> Tuple[str, str]:
 def process_modality(modal_type: ModalityEnum) -> str:
     return modal_type.value
 
-def process_version(ver_no: VersionEnum) -> str:
-    return ver_no.value
+def process_version(ver_no: VersionEnum | str) -> str:
+    try:
+        return ver_no.value
+    except:
+        return ver_no
 
 
 def verify_model(language, version, modality):
@@ -93,9 +97,22 @@ def verify_model(language, version, modality):
         'sindhi',
     ]
     try:
+        # Support for adhoc models
+        if version.startswith('adhoc_'):
+            with open('/home/ocr/models/adhoc_models.json', 'r') as f:
+                adhoc_models = json.load(f)
+            assert version in adhoc_models
+            assert language in adhoc_models[version]['language']
+            assert modality in adhoc_models[version]['modality']
         # support for minor languages
         if language in minor_languages:
-            assert version in ('v4_robust', 'v4.15m', 'V-01.04.06.00', 'v1_pu', 'v5_robust', 'v5_robustbilingual')
+            assert version in (
+                'v4_robust',
+                'v4.15m',
+                'V-01.04.06.00',
+                'v1_pu', 'v5_robust',
+                'v5_robustbilingual',
+            )
         elif version == 'v2':
             assert language != 'english'
         elif version == 'v2_robust':
@@ -240,10 +257,6 @@ def verify_model(language, version, modality):
                 'marathi', 'oriya',
                 'urdu',
             )
-        elif version == 'V-01.07.00.00' and modality == 'printed':
-            assert language in (
-                'assamese', 'bengali',
-            )
         elif version == 'V-01.04.06.00' and modality == 'printed':
             assert language == 'santali'
         elif version == 'V-04.00.00.01' and modality == 'scenetext':
@@ -253,6 +266,38 @@ def verify_model(language, version, modality):
                 'malayalam', 'punjabi',
                 'tamil', 'english',
             )
+        elif version in ('V-01.07.00.00', 'V-01.08.00.00') and modality == 'printed':
+            assert language in (
+                'assamese', 'bengali',
+                'english', 'oriya',
+                'gujarati', 'kannada',
+                'malayalam', 'manipuri',
+                'marathi', 'punjabi',
+                'hindi', 'tamil',
+                'telugu',
+            )
+        elif version == 'V-04.00.00.02' and modality == 'scenetext':
+            assert language in (
+                'assamese', 'bengali',
+                'gujarati', 'hindi',
+                'marathi', 'oriya',
+                'punjabi', 'tamil',
+                'telugu',
+            )
+        elif version == 'V-03.02.00.02' and modality == 'handwritten':
+            assert language in (
+                'bengali', 'gujarati',
+                'hindi', 'kannada',
+                'malayalam', 'oriya',
+                'punjabi', 'tamil',
+                'telugu', 'urdu',
+            )
+        elif version == 'v2_pu' and modality == 'printed':
+            assert language in (
+                'english', 'punjabi', 'hindi'
+            )
+        elif version == 'V-01.04.03.01' and modality == 'printed':
+            assert language == 'hindi'
     except AssertionError:
         raise HTTPException(
             status_code=400,
@@ -303,6 +348,24 @@ def add_padding(images, size: int):
         out = Image.new(img.mode, (w+size*2, h+size*2), (255,255,255))
         out.paste(img, (size, size))
         out.save(image)
+
+async def call_page_pu_2(language, folder):
+    a = [join(folder, i) for i in os.listdir(folder)]
+    b = os.getcwd()
+    code_path = '/home/ocr/models/code/v2_pu'
+    command = [
+        '/home/ocr/temp_venv/bin/python',
+        f'{code_path}/main.py',
+        a[0]
+    ]
+    process = await asyncio.create_subprocess_exec(*command, cwd=code_path)
+    await process.wait()
+    os.chdir(b)
+    with open('{}/output.txt'.format(code_path), 'r', encoding='utf-8') as f:
+        ret = f.read().strip()
+    return [
+        OCRImageResponse(text=ret, meta={})
+    ]
 
 async def call_page_pu(language, folder):
     a = [join(folder, i) for i in os.listdir(folder)]

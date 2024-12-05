@@ -153,9 +153,13 @@ class VersionEnum(str, Enum):
     v01040120 = 'V-01.04.01.20'
     v03020001 = 'V-03.02.00.01'
     v03020002 = 'V-03.02.00.02'
-    v01070000 = 'V-01.07.00.00'
     v01040600 = 'V-01.04.06.00'
     v04000001 = 'V-04.00.00.01'
+    v01070000 = 'V-01.07.00.00'
+    v01080000 = 'V-01.08.00.00'
+    v04000002 = 'V-04.00.00.02'
+    v2pu = 'v2_pu'
+    v01040301 = 'V-01.04.03.01'
 
 
 class OCRRequest(BaseModel):
@@ -169,7 +173,7 @@ class OCRRequest(BaseModel):
         description='Describes the detection level of the model to be called'
     )
     language: LanguageEnum
-    version: Optional[VersionEnum] = Field(
+    version: Optional[VersionEnum | str] = Field(
         VersionEnum.v2,
         description='Describes the version no of the models to be called (IIITH)'
     )

@@ -4,7 +4,7 @@ DATA_DIR="$3"
 
 echo "Performing Inference for $LANGUAGE $MODALITY Task"
 
-MODEL_DIR="/home/ocr/models/pretrained/V-03.02.00.02/printed"
+MODEL_DIR="/home/ocr/models/pretrained/V-03.02.00.02/$MODALITY"
 
 echo "Checking for model dir"
 if [ ! -d "$MODEL_DIR" ]; then

@@ -1,5 +1,4 @@
 import asyncio
-import base64
 import os
 import shutil
 import uuid
@@ -13,16 +12,17 @@ from dateutil.tz import gettz
 from fastapi import Depends, FastAPI, Form, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
-from server.config import IMAGE_FOLDER
+from server.config import IMAGE_FOLDER, LANGUAGES
 
 from .database import close_mongo_connection, connect_to_mongo
 from .dependencies import save_uploaded_images
-from .helper import (call_page_pu, call_page_tesseract,
+from .helper import (call_page_pu, call_page_pu_2, call_page_tesseract,
                      call_page_tesseract_pad, load_model, process_images,
                      process_language, process_modality, process_ocr_output,
                      process_version, verify_model)
 from .models import (LanguageEnum, ModalityEnum, OCRImageResponse, OCRRequest,
                      VersionEnum)
+from .modules.adhoc.routes import router as adhoc_router
 from .modules.auth.dependencies import get_active_user
 from .modules.auth.models import User
 from .modules.auth.routes import router as auth_router
@@ -72,6 +72,7 @@ app.include_router(ulca_router)
 app.include_router(external_router)
 app.include_router(iitb_v2_router)
 app.include_router(auth_router)
+app.include_router(adhoc_router)
 
 
 
@@ -200,6 +201,8 @@ async def infer_ocr(ocr_request: OCRRequest) -> List[OCRImageResponse]:
         call(f'./infer_new_iitb2.sh {modality} {lcode} {tmp.name}', shell=True)
     elif version == 'v1_pu':
         return await call_page_pu(language, tmp.name)
+    elif version == 'v2_pu':
+        return await call_page_pu_2(language, tmp.name)
     elif version == 'v1_st_iitj':
         call(f'./infer_v1_iitj.sh {modality} {language} {tmp.name}')
     elif version == 'tesseract_pad':
@@ -272,6 +275,8 @@ async def infer_test_ocr(
         call(f'./infer_new_iitb2.sh {modality} {lcode} {folder}', shell=True)
     elif version == 'v1_pu':
         return await call_page_pu(language, folder)
+    elif version == 'v2_pu':
+        return await call_page_pu_2(language, folder)
     elif version == 'tesseract':
         # call_tesseract(language, folder)
         return call_page_tesseract(language, folder)
