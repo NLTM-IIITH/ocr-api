@@ -17,7 +17,7 @@ import pytz
 import requests
 from fastapi import HTTPException
 from fastapi.responses import FileResponse
-from google.cloud import vision
+from google.cloud import texttospeech, vision
 from PIL import Image
 
 from server.config import LANGUAGES, NUMBER_LOADED_MODEL_THRESHOLD, TESS_LANG
@@ -153,3 +153,22 @@ def call_google_ocr(language, folder):
 
 		print(f'[{tic1}s / {tic2}s / {tic3}s] Time takes to load image, call google ocr, and parse the response')
 	return ret
+
+
+def call_google_tts(text: str):
+	client = texttospeech.TextToSpeechClient()
+	inp = texttospeech.SynthesisInput(text=text)
+	voice = texttospeech.VoiceSelectionParams(
+		language_code='hi-IN',
+		ssml_gender=texttospeech.SsmlVoiceGender.FEMALE,
+	)
+	audio_config = texttospeech.AudioConfig(
+		audio_encoding=texttospeech.AudioEncoding.MP3
+	)
+	response = client.synthesize_speech(
+		input=inp,
+		voice=voice,
+		audio_config=audio_config
+	)
+	print('Got the response')
+	return base64.b64encode(response.audio_content).decode()

@@ -105,7 +105,7 @@ def verify_model(language, version, modality):
             assert language in adhoc_models[version]['language']
             assert modality in adhoc_models[version]['modality']
         # support for minor languages
-        if language in minor_languages:
+        elif language in minor_languages:
             assert version in (
                 'v4_robust',
                 'v4.15m',
@@ -297,7 +297,38 @@ def verify_model(language, version, modality):
                 'english', 'punjabi', 'hindi'
             )
         elif version == 'V-01.04.03.01' and modality == 'printed':
-            assert language == 'hindi'
+            assert language in (
+                'assamese', 'bengali',
+                'english', 'gujarati',
+                'hindi', 'kannada',
+                'malayalam', 'manipuri',
+                'marathi', 'punjabi', 'telugu',
+            )
+        elif version == 'V-01.10.01.02' and modality == 'printed':
+            assert language in (
+                'assamese', 'bengali',
+                'english', 'gujarati',
+                'hindi', 'kannada',
+                'malayalam', 'manipuri',
+                'marathi', 'punjabi', 'telugu',
+            )
+        elif version == 'V-01.10.01.03' and modality == 'printed':
+            assert language in (
+                'assamese', 'bengali',
+                'english', 'gujarati',
+                'hindi', 'kannada',
+                'malayalam', 'manipuri',
+                'marathi', 'punjabi', 'telugu',
+            )
+        elif version == 'V-01.10.01.04' and modality == 'printed':
+            assert language in (
+                'assamese', 'bengali',
+                'english', 'gujarati',
+                'hindi', 'kannada',
+                'malayalam', 'manipuri',
+                'marathi', 'punjabi',
+                'tamil', 'telugu',
+            )
     except AssertionError:
         raise HTTPException(
             status_code=400,

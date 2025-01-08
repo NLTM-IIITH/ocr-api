@@ -1,4 +1,5 @@
 import io
+import os
 import shutil
 import uuid
 from os.path import join
@@ -11,7 +12,7 @@ from PIL import Image
 
 from ..core.models import Log
 from .dependencies import get_token
-from .helper import (call_google_ocr, call_page_tesseract2,
+from .helper import (call_google_ocr, call_google_tts, call_page_tesseract2,
                      call_page_tesseract_unbulk)
 from .models import Token
 
@@ -123,6 +124,15 @@ async def fetch_external_token(
 	token = Token(email=email, purpose=purpose)
 	await token.save()
 	return await token.refresh()
+
+@router.post(
+	'/google/tts'
+)
+async def infer_google_tts(
+	text: str = Form(...),
+):
+	audio = call_google_tts(text)
+	return {'audio': audio, 'format': 'mp3'}
 
 @router.post(
 	'/external'

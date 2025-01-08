@@ -36,6 +36,7 @@ async def test_adhoc_model(
     modality: str = Form(...),
     version: str = Form(...),
 ) -> list[OCRImageResponse]:
+    print(language, version, modality)
     verify_model(language, version, modality)
     if 'bilingual' in version:
         language = f'english_{language}'
