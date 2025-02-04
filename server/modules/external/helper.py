@@ -7,6 +7,7 @@ import shutil
 import time
 from datetime import datetime
 from os.path import basename, join
+from subprocess import call
 from tempfile import TemporaryDirectory
 from typing import List
 from uuid import uuid4
@@ -20,7 +21,8 @@ from fastapi.responses import FileResponse
 from google.cloud import texttospeech, vision
 from PIL import Image
 
-from server.config import LANGUAGES, NUMBER_LOADED_MODEL_THRESHOLD, TESS_LANG
+from server.config import (LANGUAGES, NUMBER_LOADED_MODEL_THRESHOLD,
+                           SURYA_LANG, TESS_LANG)
 
 from .models import *
 
@@ -40,6 +42,20 @@ LANGUAGES = {
 	'or': 'oriya',
 	'ur': 'urdu',
 }
+
+def call_page_surya(language, folder):
+	if language not in SURYA_LANG:
+		raise HTTPException(
+			status_code=400,
+			detail=f'Surya model not available for {language}'
+		)
+	call(
+		f'./infer_surya.sh {SURYA_LANG[language]} {folder}',
+		shell=True
+	)
+	with open(join(folder, 'out.json'), 'r', encoding='utf-8') as f:
+		return json.loads(f.read().strip())
+
 
 def call_single_tess(image_info):
 	image_path, language, bilingual = image_info

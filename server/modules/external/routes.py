@@ -10,16 +10,40 @@ from fastapi import (APIRouter, Depends, File, Form, HTTPException, Request,
                      UploadFile)
 from PIL import Image
 
+from server.config import SURYA_LANG
+
 from ..core.models import Log
 from .dependencies import get_token
-from .helper import (call_google_ocr, call_google_tts, call_page_tesseract2,
-                     call_page_tesseract_unbulk)
+from .helper import (call_google_ocr, call_google_tts, call_page_surya,
+                     call_page_tesseract2, call_page_tesseract_unbulk)
 from .models import Token
 
 router = APIRouter(
 	prefix='/ocr',
 	tags=['External OCR APIs'],
 )
+
+
+@router.post(
+	'/surya'
+)
+async def infer_surya_ocr(
+	image: UploadFile,
+	language: str = Form('english'),
+):
+	tmp = TemporaryDirectory()
+	location = join(tmp.name, '{}.{}'.format(
+		str(uuid.uuid4()),
+		image.filename.strip().split('.')[-1]
+	))
+	with open(location, 'wb+') as f:
+		shutil.copyfileobj(image.file, f)
+	await Log.create(
+		version='surya',
+		language=language,
+		image_count=1
+	)
+	return call_page_surya(language, tmp.name)
 
 
 @router.post(
