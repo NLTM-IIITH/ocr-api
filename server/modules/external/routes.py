@@ -1,27 +1,44 @@
 import io
-import os
 import shutil
 import uuid
 from os.path import join
-from subprocess import call
 from tempfile import TemporaryDirectory
 
-from fastapi import (APIRouter, Depends, File, Form, HTTPException, Request,
-                     UploadFile)
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from PIL import Image
-
-from server.config import SURYA_LANG
 
 from ..core.models import Log
 from .dependencies import get_token
-from .helper import (call_google_ocr, call_google_tts, call_page_surya,
-                     call_page_tesseract2, call_page_tesseract_unbulk)
+from .helper import (call_google_ocr, call_google_tts, call_page_azure,
+                     call_page_surya, call_page_tesseract2,
+                     call_page_tesseract_unbulk)
 from .models import Token
 
 router = APIRouter(
 	prefix='/ocr',
 	tags=['External OCR APIs'],
 )
+
+
+@router.post(
+	'/azure',
+)
+async def infer_azure_ocr(
+	image: UploadFile,
+):
+	tmp = TemporaryDirectory()
+	location = join(tmp.name, '{}.{}'.format(
+		str(uuid.uuid4()),
+		image.filename.strip().split('.')[-1]
+	))
+	with open(location, 'wb+') as f:
+		shutil.copyfileobj(image.file, f)
+	await Log.create(
+		version='surya',
+		language='',
+		image_count=1
+	)
+	return call_page_azure(location)
 
 
 @router.post(
