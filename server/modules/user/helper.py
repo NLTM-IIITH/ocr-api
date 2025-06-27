@@ -1,25 +1,13 @@
-import base64
-import cv2
-import imghdr
-import json
 import os
 import time
-import shutil
-from datetime import datetime
 from os.path import join
-from tempfile import TemporaryDirectory
-from typing import List
-from uuid import uuid4
 
-import pytz
-import requests
-from fastapi import HTTPException
-from fastapi.responses import FileResponse
-from PIL import Image
-
+import cv2
 import pytesseract
-from server.config import LANGUAGES, NUMBER_LOADED_MODEL_THRESHOLD, TESS_LANG
+from fastapi.responses import FileResponse
 from google.cloud import vision
+
+from server.config import TESS_LANG
 
 from .models import *
 
@@ -75,7 +63,7 @@ def parse_google_response(response):
 							'confidence': round(float(word.confidence), 2),
 							'language_code': str(word.property.detected_languages[0].language_code),
 						})
-					except:
+					except Exception:
 						pass
 					words.append(x)
 	ret['meta'] = {'words': words}

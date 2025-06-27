@@ -20,6 +20,8 @@ LANGUAGES = {
 	'ori': 'oriya',
 	'ur': 'urdu',
 
+	'me': 'meetei',
+
 	# Extra languages
 	'brx': 'bodo',
 	'doi': 'dogri',
@@ -30,6 +32,40 @@ LANGUAGES = {
 	'sa': 'sanskrit',
 	'sat': 'santali',
 	'sd': 'sindhi',
+}
+
+SURYA_LANG = {
+    'assamese': 'as',
+    'bengali': 'bn',
+    'english': 'en',
+    'gujarati': 'gu',
+    'hindi': 'hi',
+    'kannada': 'kn',
+    'malayalam': 'ml',
+    'marathi': 'mr',
+    'nepali': 'ne',
+    'oriya': 'or',
+    'punjabi': 'pa',
+    'sanskrit': 'sa',
+    'sindhi': 'sd',
+    'tamil': 'ta',
+    'telugu': 'te',
+}
+
+EASYOCR_LANG = {
+    'assamese': 'as',
+    'bengali': 'bn',
+    'english': 'en',
+    'hindi': 'hi',
+    'kannada': 'kn',
+    'marathi': 'mr',
+    'maithili': 'mai',
+    'nepali': 'ne',
+	# There are some errors in tamil language for easyOCR
+    # see: https://github.com/JaidedAI/EasyOCR/issues/1135
+	# 'tamil': 'ta',
+    'telugu': 'te',
+    'urdu': 'ur'
 }
 
 TESS_LANG = {
@@ -49,7 +85,8 @@ TESS_LANG = {
 	'urdu': 'urd',
     'nepali': 'nep',
     'sanskrit': 'san',
-    'sindhi': 'snd'
+    'sindhi': 'snd',
+    'kashmiri': 'hin',
 }
 
 MONGO_ENDPOINT = 'mongodb://admin:admin@127.0.0.1:27017/ocr'

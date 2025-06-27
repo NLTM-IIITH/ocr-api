@@ -16,3 +16,4 @@ tqdm
 ipython
 requests
 Pillow
+pydub

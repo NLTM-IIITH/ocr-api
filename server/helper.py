@@ -7,6 +7,7 @@ from os.path import basename, join, splitext
 from subprocess import call, check_output
 from typing import List, Tuple
 
+import aiohttp
 import pytesseract
 from fastapi import HTTPException
 from PIL import Image
@@ -112,6 +113,7 @@ def verify_model(language, version, modality):
                 'V-01.04.06.00',
                 'v1_pu', 'v5_robust',
                 'v5_robustbilingual',
+                'V-02.01.00.01',
             )
         elif version == 'v2':
             assert language != 'english'
@@ -296,39 +298,84 @@ def verify_model(language, version, modality):
             assert language in (
                 'english', 'punjabi', 'hindi'
             )
+        elif version == 'v3_pu' and modality == 'printed':
+            assert language in (
+                'english', 'punjabi', 'hindi'
+            )
         elif version == 'V-01.04.03.01' and modality == 'printed':
             assert language in (
                 'assamese', 'bengali',
                 'english', 'gujarati',
                 'hindi', 'kannada',
-                'malayalam', 'manipuri',
-                'marathi', 'punjabi', 'telugu',
+                'malayalam', 'manipuri', 'oriya',
+                'marathi', 'punjabi',
+                'tamil', 'telugu',
+            )
+        elif version == 'V-01.10.01.01' and modality == 'printed':
+            assert language in (
+                'assamese', 'bengali',
+                'english', 'gujarati',
+                'hindi', 'kannada',
+                'malayalam', 'manipuri', 'oriya',
+                'marathi', 'punjabi',
+                'tamil', 'telugu',
+                'meetei',
             )
         elif version == 'V-01.10.01.02' and modality == 'printed':
             assert language in (
                 'assamese', 'bengali',
                 'english', 'gujarati',
                 'hindi', 'kannada',
-                'malayalam', 'manipuri',
-                'marathi', 'punjabi', 'telugu',
+                'malayalam', 'manipuri', 'oriya',
+                'marathi', 'punjabi',
+                'tamil', 'telugu',
             )
         elif version == 'V-01.10.01.03' and modality == 'printed':
             assert language in (
                 'assamese', 'bengali',
                 'english', 'gujarati',
                 'hindi', 'kannada',
-                'malayalam', 'manipuri',
-                'marathi', 'punjabi', 'telugu',
+                'malayalam', 'manipuri', 'oriya',
+                'marathi', 'punjabi',
+                'tamil', 'telugu',
             )
         elif version == 'V-01.10.01.04' and modality == 'printed':
             assert language in (
                 'assamese', 'bengali',
                 'english', 'gujarati',
                 'hindi', 'kannada',
-                'malayalam', 'manipuri',
+                'malayalam', 'manipuri', 'oriya',
                 'marathi', 'punjabi',
                 'tamil', 'telugu',
             )
+        elif version in ('V-01.12.01.01', 'V-01.12.01.02', 'V-01.12.01.03') and modality == 'printed':
+            assert language == 'hindi'
+        elif version in (
+            'V-01.10.03.01',
+            'V-01.10.03.02',
+            'V-01.10.03.03',
+            'V-01.10.03.04',
+            'V-01.10.03.05',
+        ) and modality == 'printed':
+            assert language in (
+                'assamese', 'bengali',
+                'gujarati', 'hindi',
+                'kannada', 'malayalam',
+                'manipuri', 'marathi',
+                'oriya', 'punjabi',
+                'tamil', 'telugu',
+            )
+        elif version == 'V-02.01.00.01' and modality in ('printed', 'scenetext'):
+            assert language in (
+                'assamese', 'bengali',
+                'english', 'gujarati',
+                'hindi', 'kannada',
+                'malayalam', 'manipuri', 'oriya',
+                'marathi', 'punjabi',
+                'tamil', 'telugu',
+            )
+        elif version == 'V-01.10.01.05' and modality == 'printed':
+            assert language == 'punjabi'
     except AssertionError:
         raise HTTPException(
             status_code=400,
@@ -379,6 +426,24 @@ def add_padding(images, size: int):
         out = Image.new(img.mode, (w+size*2, h+size*2), (255,255,255))
         out.paste(img, (size, size))
         out.save(image)
+
+async def call_page_pu_3(language, folder):
+    a = [join(folder, i) for i in os.listdir(folder)]
+    b = os.getcwd()
+    code_path = '/home/ocr/models/code/v3_pu'
+    command = [
+        '/home/ocr/temp_venv/bin/python',
+        f'{code_path}/main.py',
+        a[0]
+    ]
+    process = await asyncio.create_subprocess_exec(*command, cwd=code_path)
+    await process.wait()
+    os.chdir(b)
+    with open('{}/output.txt'.format(code_path), 'r', encoding='utf-8') as f:
+        ret = f.read().strip()
+    return [
+        OCRImageResponse(text=ret, meta={})
+    ]
 
 async def call_page_pu_2(language, folder):
     a = [join(folder, i) for i in os.listdir(folder)]
@@ -459,3 +524,32 @@ def call_page_tesseract_pad(language, folder):
             )
         )
     return ret
+
+
+async def call_new_iitb_api(request) -> list[OCRImageResponse]:
+    url = 'https://lipikar.cse.iitd.ac.in/api-direct/recognition/infer'
+    payload = json.dumps({
+        'modality': 'printed+Scenetext',
+        'language': request.language,
+        'version': 'V1_mono',
+        'imageContent': request.imageContent
+    })
+    headers = {
+        'Content-Type': 'application/json'
+    }
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url, data=payload, headers=headers) as response:
+            try:
+                content = await response.json()
+                ret = []
+                for i in content['output']:
+                    ret.append(OCRImageResponse(
+                        text=i.get('source', ''),
+                        meta={}
+                    ))
+                return ret
+            except Exception as e:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f'Error while calling the IITD Recognition API: {e}'
+                )

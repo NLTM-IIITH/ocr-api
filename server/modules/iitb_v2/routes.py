@@ -1,11 +1,11 @@
 from subprocess import call
-import os
 
 from fastapi import APIRouter, Request
 
-from .helper import *
+from .config import IMAGE_FOLDER
+from .helper import (process_config, process_images, process_ocr_output,
+                     save_logs)
 from .models import OCRRequest, OCRResponse
-from .config import *
 
 router = APIRouter(
 	prefix='/ocr/iitb',
@@ -19,10 +19,7 @@ router = APIRouter(
 )
 async def infer_ocr(ocr_request: OCRRequest, request: Request) -> OCRResponse:
 	process_images(ocr_request.image)
-	lcode, language, modality, dlevel = process_config(ocr_request.config)
-
-	# if len(os.listdir(MODEL_FOLDER))==0:
-	# 	download_models_from_file(models_txt_path,MODEL_FOLDER)
+	lcode, _, modality, _ = process_config(ocr_request.config)
 
 	if modality=='handwritten':
 		call(f'./infer_iitb_v2.sh {modality} {lcode} {IMAGE_FOLDER}', shell=True)

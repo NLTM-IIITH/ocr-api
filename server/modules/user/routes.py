@@ -2,16 +2,14 @@ import io
 import shutil
 import uuid
 from os.path import join
-from subprocess import call
 from tempfile import TemporaryDirectory
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from PIL import Image
 
 from ..core.models import Log
 from .dependencies import get_token
 from .helper import call_google_ocr, call_page_tesseract2
-from .models import Token
 from .models import Token
 
 router = APIRouter(
@@ -63,7 +61,7 @@ async def fetch_all_token(
 		)
 
 @router.post('/token/refresh', response_model=Token)
-async def fetch_all_token(
+async def refresh_token(
 	id: str
 ) -> Token:
 	tokens = await Token.filter(id=id)

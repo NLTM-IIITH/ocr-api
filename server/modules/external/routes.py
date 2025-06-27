@@ -5,12 +5,13 @@ from os.path import join
 from tempfile import TemporaryDirectory
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from google.cloud import translate_v2 as translate
 from PIL import Image
 
 from ..core.models import Log
 from .dependencies import get_token
 from .helper import (call_google_ocr, call_google_tts, call_page_azure,
-                     call_page_surya, call_page_tesseract2,
+                     call_page_easyocr, call_page_surya, call_page_tesseract2,
                      call_page_tesseract_unbulk)
 from .models import Token
 
@@ -19,6 +20,27 @@ router = APIRouter(
 	tags=['External OCR APIs'],
 )
 
+
+@router.post(
+	'/easyocr',
+)
+async def infer_easy_ocr(
+	image: UploadFile,
+	language: str = Form('english'),
+):
+	tmp = TemporaryDirectory()
+	location = join(tmp.name, '{}.{}'.format(
+		str(uuid.uuid4()),
+		image.filename.strip().split('.')[-1]
+	))
+	with open(location, 'wb+') as f:
+		shutil.copyfileobj(image.file, f)
+	await Log.create(
+		version='easyocr',
+		language='',
+		image_count=1
+	)
+	return call_page_easyocr(language, tmp.name)
 
 @router.post(
 	'/azure',
@@ -34,7 +56,7 @@ async def infer_azure_ocr(
 	with open(location, 'wb+') as f:
 		shutil.copyfileobj(image.file, f)
 	await Log.create(
-		version='surya',
+		version='azure',
 		language='',
 		image_count=1
 	)
@@ -171,8 +193,9 @@ async def fetch_external_token(
 )
 async def infer_google_tts(
 	text: str = Form(...),
+	language: str = Form('english'),
 ):
-	audio = call_google_tts(text)
+	audio = call_google_tts(text, language)
 	return {'audio': audio, 'format': 'mp3'}
 
 @router.post(
@@ -192,7 +215,7 @@ async def infer_external_commercial_ocr(
 		shutil.copyfileobj(image.file, f)
 	if token.quota < 1:
 		raise HTTPException(
-			status_code=400,
+			status_code=403,
 			detail='Token Expired. Please fetch a new token and try again'
 		)
 	else:
@@ -238,7 +261,7 @@ async def infer_google_ocr(
 		shutil.copyfileobj(image.file, f)
 	if token.quota < 1:
 		raise HTTPException(
-			status_code=400,
+			status_code=403,
 			detail='Token Expired. Please fetch a new token and try again'
 		)
 	else:
@@ -250,3 +273,17 @@ async def infer_google_ocr(
 		image_count=1,
 	)
 	return call_google_ocr(language, tmp.name)
+
+
+@router.post('/google/mt')
+async def infer_google_mt(
+	text: str,
+	# source: str,
+	target: str,
+):
+	print(text, target)
+	translate_client = translate.Client()
+	result = translate_client.translate(text, target_language=target)
+	return {
+		'text': result['translatedText'],
+	}
