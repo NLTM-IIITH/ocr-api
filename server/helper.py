@@ -1,8 +1,11 @@
 import asyncio
+import re
 import base64
 import json
 import os
+import ssl
 import tempfile
+import zipfile
 from os.path import basename, join, splitext
 from subprocess import call, check_output
 from typing import List, Tuple
@@ -11,6 +14,7 @@ import aiohttp
 import pytesseract
 from fastapi import HTTPException
 from PIL import Image
+from sarvamai import SarvamAI
 from tqdm import tqdm
 
 from server.config import LANGUAGES, NUMBER_LOADED_MODEL_THRESHOLD, TESS_LANG
@@ -57,7 +61,7 @@ def process_images(images: List[str], save_path) -> int:
     processes all the images in the given list.
     it saves all the images in the save_path folder.
     """
-    for idx, image in enumerate(images):
+    for idx, image in tqdm(enumerate(images), desc='Saving images'):
         try:
             with open(join(save_path, f'{idx}.jpg'), 'wb') as f:
                 f.write(base64.b64decode(image))
@@ -114,6 +118,8 @@ def verify_model(language, version, modality):
                 'v1_pu', 'v5_robust',
                 'v5_robustbilingual',
                 'V-02.01.00.01',
+                'V-02.01.00.02',
+                'V-03.02.00.03'
             )
         elif version == 'v2':
             assert language != 'english'
@@ -302,6 +308,14 @@ def verify_model(language, version, modality):
             assert language in (
                 'english', 'punjabi', 'hindi'
             )
+        elif version == 'V-05.04.00.00' and modality == 'printed':
+            assert language in (
+                'english', 'hindi'
+            )
+        elif version == 'V-05.04.00.01' and modality == 'printed':
+            assert language in (
+                'punjabi'
+            )
         elif version == 'V-01.04.03.01' and modality == 'printed':
             assert language in (
                 'assamese', 'bengali',
@@ -372,10 +386,62 @@ def verify_model(language, version, modality):
                 'hindi', 'kannada',
                 'malayalam', 'manipuri', 'oriya',
                 'marathi', 'punjabi',
-                'tamil', 'telugu',
+                'tamil', 'telugu', 'meetei', 'urdu',
+            )
+        elif version == 'V-02.01.00.02' and modality in ('printed', 'scenetext'):
+            assert language in (
+                'tamil' , 'english' , 'marathi' ,'punjabi',
             )
         elif version == 'V-01.10.01.05' and modality == 'printed':
             assert language == 'punjabi'
+        elif version.startswith('V-01.09.00.0') and modality == 'handwritten':
+            assert language in (
+                'bengali', 'gujarati',
+                'hindi', 'kannada',
+                'malayalam', 'oriya',
+                'punjabi', 'tamil',
+                'telugu', 'urdu',
+            )
+        elif version == 'V-06.02.00.00' and modality == 'printed':
+            assert language in (
+                'bengali','oriya',
+            )
+        elif version == 'V-06.02.00.01' and modality == 'printed':
+            assert language in (
+                'manipuri',
+            )
+        elif version == 'V-06.02.00.02' and modality == 'printed':
+            assert language in (
+                'assamese',
+            )
+        elif version == 'V-01.11.01.01' and modality == 'printed':
+            assert language in (
+                'assamese', 'bengali',
+                'gujarati',
+                'hindi', 'kannada',
+                'malayalam', 'manipuri', 'oriya',
+                'marathi', 'punjabi',
+                'tamil', 'telugu',
+            )
+        elif version == 'V-01.12.01.00' and modality == 'printed':
+            assert language in (
+                'assamese', 'bengali',
+                'gujarati',
+                'hindi', 'kannada',
+                'malayalam', 'manipuri', 'oriya',
+                'marathi', 'punjabi',
+                'tamil', 'telugu',
+            )
+        elif version == 'V-01.13.01.00' and modality == 'printed':
+            assert language in (
+                'assamese', 'bengali',
+                'hindi', 'kannada',
+                'malayalam', 'manipuri', 'oriya',
+                'marathi', 'punjabi',
+                'tamil', 'telugu',
+            )
+        elif version == 'V-06.03.00.00' and modality == 'printed':
+            assert language in ('assamese', 'bengali', 'manipuri')
     except AssertionError:
         raise HTTPException(
             status_code=400,
@@ -526,16 +592,56 @@ def call_page_tesseract_pad(language, folder):
     return ret
 
 
-async def call_new_iitb_api(request) -> list[OCRImageResponse]:
+async def call_new_iitd_api(request) -> list[OCRImageResponse]:
     url = 'https://lipikar.cse.iitd.ac.in/api-direct/recognition/infer'
+    if request.language == 'me':
+        request.language = 'mni'
     payload = json.dumps({
-        'modality': 'printed+Scenetext',
+        'modality': 'Printed+SceneText',
         'language': request.language,
-        'version': 'V1_mono',
+        'version': '1',
         'imageContent': request.imageContent
     })
     headers = {
         'Content-Type': 'application/json'
+    }
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url, data=payload,  headers=headers) as response:
+            print(await response.text())
+            try:
+                content = await response.json()
+                ret = []
+                for i in content['output']:
+                    try:
+                        t = i['source'][0]
+                    except:
+                        t = ''
+                    ret.append(OCRImageResponse(
+                        text=t,
+                        meta={}
+                    ))
+                return ret
+            except Exception as e:
+                print(e)
+                raise HTTPException(
+                    status_code=500,
+                    detail=f'Error while calling the IITD Recognition API: {e}'
+                )
+
+
+async def call_new_iitd_v2_api(request) -> list[OCRImageResponse]:
+    url = 'https://lipikar.cse.iitd.ac.in/api-direct/recognition/infer'
+    if request.language == 'me':
+        request.language = 'mni'
+    payload = json.dumps({
+        'modality': 'Printed+SceneText',
+        'language': request.language,
+        'version': '2',
+        'imageContent': request.imageContent
+    })
+    headers = {
+        'Content-Type': 'application/json',
+        'accept': 'application/json'
     }
     async with aiohttp.ClientSession() as session:
         async with session.post(url, data=payload, headers=headers) as response:
@@ -543,13 +649,96 @@ async def call_new_iitb_api(request) -> list[OCRImageResponse]:
                 content = await response.json()
                 ret = []
                 for i in content['output']:
+                    try:
+                        t = i['source'][0]
+                    except:
+                        t = ''
                     ret.append(OCRImageResponse(
-                        text=i.get('source', ''),
+                        text=t,
                         meta={}
                     ))
                 return ret
             except Exception as e:
+                print(e)
                 raise HTTPException(
                     status_code=500,
                     detail=f'Error while calling the IITD Recognition API: {e}'
                 )
+
+
+async def call_new_iitd_ci_api(request) -> list[OCRImageResponse]:
+    url = 'https://lipikar.cse.iitd.ac.in/api-direct/recognition/infer'
+
+    payload = json.dumps({
+        'modality': 'Printed+SceneText',
+        'language': 'combined_indic',
+        'version': '2',
+        'imageContent': request.imageContent
+    })
+    headers = {
+        'Content-Type': 'application/json',
+        'accept': 'application/json'
+    }
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url, data=payload, headers=headers) as response:
+            try:
+                content = await response.json()
+                ret = []
+                for i in content['output']:
+                    try:
+                        t = i['source'][0]
+                    except:
+                        t = ''
+                    ret.append(OCRImageResponse(
+                        text=t,
+                        meta={}
+                    ))
+                return ret
+            except Exception as e:
+                print(e)
+                raise HTTPException(
+                    status_code=500,
+                    detail=f'Error while calling the IITD Recognition API: {e}'
+                )
+
+async def call_sarvam_api(language: str, folder: str):
+    client = SarvamAI(
+        api_subscription_key='sk_ebs9gsbk_w5ppkA4Nc3G5tnpXUmivhLET'
+    )
+    language_map = {
+        'ori': 'or',
+        'asa': 'as',
+    }
+    if language in language_map: language = language_map[language]
+    job = client.document_intelligence.create_job(
+        language=f'{language}-IN',
+        output_format='md',
+    )
+    a = [join(folder, i) for i in os.listdir(folder)]
+    a = a[0]
+    with tempfile.TemporaryDirectory() as tmp:
+        filename = basename(a)
+        zip_path = join(tmp, splitext(filename)[0]+'.zip')
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            zipf.write(a, arcname=filename)
+        job.upload_file(zip_path)
+        job.start()
+        status = job.wait_until_complete()
+        zip_path = join(tmp, 'output.zip')
+        if status.job_state != 'Completed':
+            raise HTTPException(
+                status_code=500,
+                detail=f'Job Status {status.job_state} while calling SarvamAI'
+            )
+        job.download_output(zip_path)
+        ret = ''
+        with zipfile.ZipFile(zip_path, 'r') as zipf:
+            with zipf.open('metadata/page_001.json') as f:
+                ret = f.read().decode('utf-8')
+                ret = json.loads(ret)
+                ret = [i['text'].strip() for i in ret['blocks'] if i['layout_tag'] != 'image']
+                ret = re.sub(r'<[^>]+>', '', '\n'.join(ret))
+                while '\n\n' in ret:
+                    ret = ret.replace('\n\n', '\n')
+    await asyncio.sleep(10)
+    return [OCRImageResponse(text=ret, meta={})]

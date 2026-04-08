@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Optional
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
@@ -8,18 +7,24 @@ from .mixins import DBModelMixin
 
 
 class Log(BaseModel, DBModelMixin):
-    id: Optional[str] = Field(default_factory=lambda: str(uuid4()))
-    user_token: Optional[str] = Field('')
-    language: Optional[str] = Field('')
-    modality: Optional[str] = Field('printed')
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    user_token: str | None = Field('')
+    language: str | None = Field('')
+    modality: str | None = Field('printed')
     version: str
-    image_count: Optional[int] = Field(0)
-    created: Optional[datetime] = Field(default_factory=datetime.now)
+    image_count: int | None = Field(0)
+    created: datetime | None = Field(default_factory=datetime.now)
 
     class Meta:
         collection_name = 'logs'
 
-    @classmethod
-    async def create(cls, **kwargs):
-        ret = cls(**kwargs)
-        await ret.save()
+
+class Model(BaseModel, DBModelMixin):
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    language: str
+    modality: str
+    version: str
+    created: datetime | None = Field(default_factory=datetime.now)
+
+    class Meta:
+        collection_name = 'models'

@@ -39,6 +39,19 @@ LANGUAGES = {
     'ur': 'urdu',
 }
 
+def call_page_easyocr_bulk(language, folder):
+    if language not in EASYOCR_LANG:
+        raise HTTPException(
+            status_code=400,
+            detail=f'EasyOCR model not available for {language}'
+        )
+    call(
+        f'./infer_easyocr_bulk.sh {EASYOCR_LANG[language]} {folder}',
+        shell=True
+    )
+    with open(join(folder, 'out.json'), 'r', encoding='utf-8') as f:
+        return json.loads(f.read().strip())
+
 def call_page_easyocr(language, folder):
     if language not in EASYOCR_LANG:
         raise HTTPException(

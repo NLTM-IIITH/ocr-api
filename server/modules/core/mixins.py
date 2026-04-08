@@ -6,6 +6,11 @@ from server.database import get_db
 class DBModelMixin:
 
     @classmethod
+    async def create(cls, **kwargs):
+        ret = cls(**kwargs)
+        return await ret.save()
+
+    @classmethod
     async def all(cls) -> list:
         ret = get_db()[cls.Meta.collection_name].find()
         return [cls(**i) async for i in ret]
@@ -27,6 +32,7 @@ class DBModelMixin:
 
     async def save(self):
         await get_db()[self.Meta.collection_name].insert_one(self.dict())
+        return await self.refresh()
 
     async def update(self, **kwargs):
         kwargs.update({'modified': datetime.now()})
